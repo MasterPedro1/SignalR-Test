@@ -2,11 +2,9 @@ using signalr.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Agregar servicios al contenedor
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR(); // Agregar SignalR
 
-// Configurar CORS para permitir conexiones desde cualquier origen
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", builder =>
@@ -14,13 +12,12 @@ builder.Services.AddCors(options =>
         builder.AllowAnyMethod()
                .AllowAnyHeader()
                .AllowCredentials()
-               .SetIsOriginAllowed(_ => true); // Permite cualquier origen
+               .SetIsOriginAllowed(_ => true);
     });
 });
 
 var app = builder.Build();
 
-// Configuración del pipeline de solicitudes HTTP
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -32,15 +29,13 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Habilitar CORS
 app.UseCors("CorsPolicy");
 
 app.UseAuthorization();
 
 app.MapRazorPages();
 
-// Mapear SignalR
-app.MapHub<Pedidos>("/pedidoHub"); // Asegúrate de haber creado PedidoHub.cs
+app.MapHub<Pedidos>("/pedidoHub");
 
 app.Run();
 

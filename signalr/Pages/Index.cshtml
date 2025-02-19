@@ -1,28 +1,28 @@
 ﻿@page
 
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedidos - Vendedores</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
 </head>
 <body class="bg-gray-100 text-gray-900 flex justify-center items-center min-h-screen">
 
     <div class="max-w-4xl w-full">
+
         <!-- Sección de ingreso de nombre -->
         <div id="nombreSection" class="bg-white p-6 rounded-lg shadow-md text-center">
             <h2 class="text-2xl font-semibold mb-4">Ingresa tu nombre</h2>
-            <div class="flex justify-center gap-2">
-                <input type="text" id="nombreVendedor" placeholder="Tu nombre" class="border rounded px-4 py-2 w-64">
-                <button onclick="guardarNombre()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    Aceptar
-                </button>
-            </div>
+            <input type="text" id="nombreVendedor" placeholder="Tu nombre" class="border rounded px-4 py-2 w-64">
+            <button onclick="guardarNombre()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Aceptar
+            </button>
         </div>
 
         <!-- Sección de pedidos (oculta al inicio) -->
@@ -44,9 +44,11 @@
                 <div class="flex flex-wrap gap-4">
                     <input type="text" id="pedido" placeholder="Pedido" class="border rounded px-4 py-2 w-full sm:w-2/5">
                     <input type="number" id="cantidad" placeholder="Cantidad" class="border rounded px-4 py-2 w-24">
-                    <button id="btnEnviarPedido" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        Enviar Pedido
-                    </button>
+                    <div id="botonesAccion">
+                        <button onclick="agregarPedido()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            Enviar Pedido
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -67,34 +69,25 @@
                 </table>
             </div>
         </div>
+
     </div>
 
     <script>
-        let usuario = "";
-        let connection = new signalR.HubConnectionBuilder()
+
+        const connection = new signalR.HubConnectionBuilder()
             .withUrl("/pedidoHub")
-            .withAutomaticReconnect() // Permitir reconexión automática si la conexión se pierde
             .build();
 
-        // Iniciar conexión y habilitar botón de enviar cuando esté lista
-        async function iniciarConexion() {
-            try {
-                await connection.start();
-                console.log("Conectado a SignalR");
-                document.getElementById("btnEnviarPedido").disabled = false;
-                connection.invoke("ObtenerPedidos").catch(err => console.error(err.toString()));
-            } catch (err) {
-                console.error("Error al conectar con SignalR: ", err);
-                setTimeout(iniciarConexion, 5000); // Reintentar conexión en 5 segundos
-            }
-        }
+        let usuario = "";
+        let pedidoTemporal = null; // Guardar fila temporal
+        let idTemporal = crypto.randomUUID(); // ID único para la fila temporal
+        let pedidoEditando = null; // Guardar el pedido en edición
 
-        connection.onclose(() => {
-            console.warn("Conexión cerrada. Intentando reconectar...");
-            iniciarConexion();
+
+        connection.start().then(() => {
+            console.log("Conectado a SignalR");
+            connection.invoke("ObtenerPedidos").catch(err => console.error(err.toString()));
         });
-
-        iniciarConexion(); // Ejecutar conexión al cargar la página
 
         function guardarNombre() {
             usuario = document.getElementById("nombreVendedor").value.trim();
@@ -108,9 +101,68 @@
             document.getElementById("nombreUsuario").textContent = usuario;
         }
 
-        document.getElementById("btnEnviarPedido").addEventListener("click", function () {
-            agregarPedido();
-        });
+        function actualizarFilaTemporal() {
+            if (pedidoEditando) return; // Si estamos editando, no crear una nueva fila
+
+            const pedido = document.getElementById("pedido").value.trim();
+            const cantidad = document.getElementById("cantidad").value.trim();
+            const fecha = new Date().toISOString().split('T')[0];
+
+            // ID único basado en el usuario
+            const idTemporal = `temp-${usuario}`;
+
+            if (!pedido && !cantidad) {
+                // Si el usuario borra su entrada, eliminar su fila temporal
+                connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err.toString()));
+                eliminarFilaTemporalLocal(idTemporal);
+                return;
+            }
+
+            const tempPedido = {
+                id: idTemporal,  // Cada usuario tiene su propia fila temporal única
+                pedidoNombre: pedido || "...",
+                cantidad: cantidad || "...",
+                fecha: fecha,
+                usuario: usuario,
+                estatus: "Pendiente"
+            };
+
+            // Enviar actualización a todos los usuarios sin generar filas duplicadas
+            connection.invoke("ActualizarFilaTemporal", tempPedido).catch(err => console.error(err.toString()));
+
+            // Solo actualizar si la fila aún no existe en el frontend
+            actualizarFilaTemporalLocal(tempPedido);
+        }
+
+        function actualizarFilaTemporalLocal(tempPedido) {
+            const tabla = document.getElementById("tablaPedidos");
+
+            let filaExistente = document.getElementById(tempPedido.id);
+
+            if (!filaExistente) {
+                filaExistente = document.createElement("tr");
+                filaExistente.id = tempPedido.id;
+                filaExistente.classList.add("border-b", "text-gray-400"); // Mantener el color gris
+                filaExistente.innerHTML = `
+                    <td class="p-3">${tempPedido.pedidoNombre}</td>
+                    <td class="p-3">${tempPedido.cantidad}</td>
+                    <td class="p-3">${tempPedido.fecha}</td>
+                    <td class="p-3">${tempPedido.usuario}</td>
+                    <td class="p-3 text-yellow-500">${tempPedido.estatus}</td>
+                    <td class="p-3"></td>
+                `;
+                tabla.appendChild(filaExistente);
+            } else {
+                // Si la fila ya existe, solo actualizar los valores sin agregar otra fila
+                filaExistente.children[0].textContent = tempPedido.pedidoNombre;
+                filaExistente.children[1].textContent = tempPedido.cantidad;
+            }
+        }
+
+        function eliminarFilaTemporalLocal(idPedido) {
+            const fila = document.getElementById(idPedido);
+            if (fila) fila.remove();
+        }
 
         function agregarPedido() {
             const pedido = document.getElementById("pedido").value.trim();
@@ -124,18 +176,149 @@
 
             const nuevoPedido = {
                 id: crypto.randomUUID(),
-                pedido: pedido,
+                pedidoNombre: pedido,
                 cantidad: cantidad,
                 fecha: fecha,
                 usuario: usuario,
                 estatus: "En revisión"
             };
 
-            if (connection.state === "Connected") {
-                connection.invoke("EnviarPedido", nuevoPedido).catch(err => console.error(err.toString()));
-            } else {
-                console.warn("No se puede enviar el pedido porque la conexión no está lista.");
+            connection.invoke("EnviarPedido", nuevoPedido).catch(err => console.error(err.toString()));
+
+            // Limpiar los inputs después de enviar
+            document.getElementById("pedido").value = "";
+            document.getElementById("cantidad").value = "";
+            connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err.toString()));
+            eliminarFilaTemporalLocal(idTemporal);
+        }
+
+        function editarPedido(idPedido) {
+            const fila = document.getElementById(idPedido);
+            if (!fila) return;
+
+            // Obtener datos actuales de la fila
+            const pedidoNombre = fila.children[0].textContent;
+            const cantidad = fila.children[1].textContent;
+
+            // Colocar valores en los inputs
+            document.getElementById("pedido").value = pedidoNombre;
+            document.getElementById("cantidad").value = cantidad;
+
+            // Guardar ID del pedido en edición
+            pedidoEditando = idPedido;
+
+            // Cambiar la fila a gris y su estatus a "Pendiente"
+            fila.classList.add("text-gray-400");
+            fila.children[4].textContent = "Pendiente";
+
+            // Notificar a otros usuarios que el pedido está en edición
+            connection.invoke("MarcarPedidoEnEdicion", idPedido).catch(err => console.error(err.toString()));
+
+            // Cambiar el botón de "Enviar" a "Actualizar" y "Cancelar"
+            document.getElementById("botonesAccion").innerHTML = `
+                <button onclick="actualizarPedido()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Actualizar</button>
+                <button onclick="cancelarEdicion()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancelar</button>
+            `;
+
+            // Detectar cambios en los inputs y actualizar la fila editada en tiempo real
+            document.getElementById("pedido").addEventListener("input", actualizarFilaEditada);
+            document.getElementById("cantidad").addEventListener("input", actualizarFilaEditada);
+        }
+
+        function actualizarPedido() {
+            if (!pedidoEditando) return;
+
+            const pedido = document.getElementById("pedido").value.trim();
+            const cantidad = document.getElementById("cantidad").value.trim();
+            const fecha = new Date().toISOString().split('T')[0];
+
+            if (!pedido || !cantidad) {
+                alert("Todos los campos son obligatorios");
+                return;
             }
+
+            const pedidoActualizado = {
+                id: pedidoEditando,
+                pedidoNombre: pedido,
+                cantidad: cantidad,
+                fecha: fecha,
+                usuario: usuario,
+                estatus: "En Revisión"
+            };
+
+            connection.invoke("ActualizarPedido", pedidoActualizado).catch(err => console.error(err.toString()));
+
+            // Restaurar la fila a su estado normal
+            const fila = document.getElementById(pedidoEditando);
+            if (fila) {
+                fila.classList.remove("text-gray-400");
+                fila.children[4].textContent = "En Revisión";
+            }
+
+            // Limpiar los inputs y restaurar el botón "Enviar Pedido"
+            document.getElementById("pedido").value = "";
+            document.getElementById("cantidad").value = "";
+            pedidoEditando = null;
+
+            document.getElementById("botonesAccion").innerHTML = `
+                <button onclick="agregarPedido()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enviar Pedido</button>
+            `;
+
+            // Eliminar evento de actualización en tiempo real
+            document.getElementById("pedido").removeEventListener("input", actualizarFilaEditada);
+            document.getElementById("cantidad").removeEventListener("input", actualizarFilaEditada);
+        }
+
+        function cancelarEdicion() {
+            if (!pedidoEditando) return;
+
+            // Restaurar la fila a su estado original en todas las sesiones
+            connection.invoke("DesmarcarPedidoEnEdicion", pedidoEditando).catch(err => console.error(err.toString()));
+
+            // Limpiar los inputs y restaurar el botón "Enviar Pedido"
+            document.getElementById("pedido").value = "";
+            document.getElementById("cantidad").value = "";
+            pedidoEditando = null;
+
+            document.getElementById("botonesAccion").innerHTML = `
+                <button onclick="agregarPedido()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enviar Pedido</button>
+            `;
+
+            // Eliminar evento de actualización en tiempo real
+            document.getElementById("pedido").removeEventListener("input", actualizarFilaEditada);
+            document.getElementById("cantidad").removeEventListener("input", actualizarFilaEditada);
+        }
+
+        function actualizarFilaEditada() {
+            if (!pedidoEditando) return; // Si no estamos editando, no hacer nada
+
+            const fila = document.getElementById(pedidoEditando);
+            if (!fila) return;
+
+            // Obtener valores de los inputs
+            const pedido = document.getElementById("pedido").value.trim();
+            const cantidad = document.getElementById("cantidad").value.trim();
+
+            // Actualizar la fila editada en tiempo real
+            fila.children[0].textContent = pedido || "...";
+            fila.children[1].textContent = cantidad || "...";
+        }
+
+        function eliminarPedido(idPedido) {
+            connection.invoke("EliminarPedido", usuario, idPedido).catch(err => console.error(err.toString()));
+        }
+
+        connection.on("ActualizarFilaTemporal", (tempPedido) => {
+            actualizarFilaTemporalLocal(tempPedido);
+        });
+
+        connection.on("EliminarFilaTemporal", (idTemporal) => {
+            eliminarFilaTemporalLocal(idTemporal);
+        });
+
+        function eliminarFilaTemporalLocal(idTemporal) {
+            const fila = document.getElementById(idTemporal);
+            if (fila) fila.remove();
         }
 
         connection.on("ActualizarPedidos", (pedidos) => {
@@ -145,28 +328,82 @@
             pedidos.slice().reverse().forEach(pedido => {
                 const fila = document.createElement("tr");
                 fila.classList.add("border-b");
+                fila.id = pedido.id; // Asignar el ID para encontrarlo después si se edita
                 fila.innerHTML = `
-                            <td class="p-3">${pedido.pedido}</td>
-                            <td class="p-3">${pedido.cantidad}</td>
-                            <td class="p-3">${pedido.fecha}</td>
-                            <td class="p-3">${pedido.usuario}</td>
-                            <td class="p-3 text-yellow-500">${pedido.estatus}</td>
-                            <td class="p-3">
-                                ${pedido.usuario === usuario ? `<button onclick="eliminarPedido('${pedido.id}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Eliminar</button>` : ""}
-                            </td>
-                        `;
+                    <td class="p-3">${pedido.pedidoNombre}</td>
+                    <td class="p-3">${pedido.cantidad}</td>
+                    <td class="p-3">${pedido.fecha}</td>
+                    <td class="p-3">${pedido.usuario}</td>
+                    <td class="p-3 text-yellow-500">${pedido.estatus}</td>
+                    <td class="p-3">
+                        ${pedido.usuario === usuario ? `
+                            <button onclick="editarPedido('${pedido.id}')" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">Editar</button>
+                            <button onclick="eliminarPedido('${pedido.id}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Eliminar</button>
+                        ` : ""}
+                    </td>
+                `;
                 tabla.appendChild(fila);
             });
         });
 
-        function eliminarPedido(idPedido) {
-            if (connection.state === "Connected") {
-                connection.invoke("EliminarPedido", usuario, idPedido).catch(err => console.error(err.toString()));
-            } else {
-                console.warn("No se puede eliminar el pedido porque la conexión no está lista.");
-            }
-        }
-    </script>
+        connection.on("PedidoEliminado", (idPedido) => {
+            document.getElementById("tablaPedidos").querySelectorAll("tr").forEach(row => {
+                if (row.dataset.id === idPedido) row.remove();
+            });
+        });
 
+        connection.on("MarcarPedidoEnEdicion", (idPedido) => {
+            const fila = document.getElementById(idPedido);
+            if (!fila) return;
+
+            // Aplicar estilo gris y cambiar estado a "Pendiente"
+            fila.classList.add("text-gray-400");
+            fila.children[4].textContent = "Pendiente";
+        });
+
+        connection.on("DesmarcarPedidoEnEdicion", (idPedido) => {
+            const fila = document.getElementById(idPedido);
+            if (!fila) return;
+
+            // Restaurar color normal y estado
+            fila.classList.remove("text-gray-400");
+            fila.children[4].textContent = "En Revisión";
+        });
+
+        connection.on("PedidoConfirmado", (pedido) => {
+            // ID de la fila temporal del usuario que envió el pedido
+            const idTemporal = `temp-${pedido.usuario}`;
+
+            // Eliminar la fila temporal si existe
+            eliminarFilaTemporalLocal(idTemporal);
+
+            // Agregar el pedido confirmado a la tabla
+            const tabla = document.getElementById("tablaPedidos");
+            const fila = document.createElement("tr");
+            fila.id = pedido.id;
+            fila.classList.add("border-b");
+            fila.innerHTML = `
+                <td class="p-3">${pedido.pedidoNombre}</td>
+                <td class="p-3">${pedido.cantidad}</td>
+                <td class="p-3">${pedido.fecha}</td>
+                <td class="p-3">${pedido.usuario}</td>
+                <td class="p-3 text-yellow-500">${pedido.estatus}</td>
+                <td class="p-3">
+                    ${pedido.usuario === usuario ? `
+                        <button onclick="editarPedido('${pedido.id}')" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">Editar</button>
+                        <button onclick="eliminarPedido('${pedido.id}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Eliminar</button>
+                    ` : ""}
+                </td>
+            `;
+            tabla.appendChild(fila);
+        });
+
+        // Detectar cambios en los inputs y actualizar la fila temporal
+        document.getElementById("pedido").addEventListener("input", actualizarFilaTemporal);
+        document.getElementById("cantidad").addEventListener("input", actualizarFilaTemporal);
+
+
+    </script>
 </body>
 </html>
+
