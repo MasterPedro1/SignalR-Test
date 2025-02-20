@@ -61,7 +61,6 @@ namespace signalr.Hubs
             }
         }
 
-        // 📌 **Aquí agregamos `ActualizarPedido()`**
         public async Task ActualizarPedido(Pedido pedidoActualizado)
         {
             var pedido = _pedidos.FirstOrDefault(p => p.Id == pedidoActualizado.Id);

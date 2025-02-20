@@ -1,18 +1,7 @@
 ﻿@page
 
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedidos - Vendedores</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-
-</head>
-<body class="bg-gray-100 text-gray-900 flex justify-center items-center min-h-screen">
+<div class="flex justify-center items-center min-h-screen">
 
     <div class="max-w-4xl w-full">
 
@@ -72,6 +61,9 @@
 
     </div>
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
     <script>
 
         const connection = new signalR.HubConnectionBuilder()
@@ -99,6 +91,9 @@
             document.getElementById("nombreSection").classList.add("hidden");
             document.getElementById("pedidoSection").classList.remove("hidden");
             document.getElementById("nombreUsuario").textContent = usuario;
+
+            // Volver a solicitar los pedidos del servidor y actualizar la UI
+            connection.invoke("ObtenerPedidos").catch(err => console.error(err.toString()));
         }
 
         function actualizarFilaTemporal() {
@@ -193,8 +188,39 @@
         }
 
         function editarPedido(idPedido) {
+            // Si hay un pedido en edición, restaurar sus botones antes de editar otro
+            if (pedidoEditando) {
+                const filaAnterior = document.getElementById(pedidoEditando);
+                if (filaAnterior) {
+                    const btnEditarAnterior = filaAnterior.querySelector(`button[onclick="editarPedido('${pedidoEditando}')"]`);
+                    const btnEliminarAnterior = filaAnterior.querySelector(`button[onclick="eliminarPedido('${pedidoEditando}')"]`);
+                    if (btnEditarAnterior) {
+                        btnEditarAnterior.disabled = false;
+                        btnEditarAnterior.classList.remove("opacity-50", "cursor-not-allowed");
+                    }
+                    if (btnEliminarAnterior) {
+                        btnEliminarAnterior.disabled = false;
+                        btnEliminarAnterior.classList.remove("opacity-50", "cursor-not-allowed");
+                    }
+                }
+            }
+
             const fila = document.getElementById(idPedido);
             if (!fila) return;
+
+            // Obtener los botones dentro de la fila
+            const btnEditar = fila.querySelector(`button[onclick="editarPedido('${idPedido}')"]`);
+            const btnEliminar = fila.querySelector(`button[onclick="eliminarPedido('${idPedido}')"]`);
+
+            // Desactivar los botones de la fila seleccionada y aplicar efecto visual
+            if (btnEditar) {
+                btnEditar.disabled = true;
+                btnEditar.classList.add("opacity-50", "cursor-not-allowed");
+            }
+            if (btnEliminar) {
+                btnEliminar.disabled = true;
+                btnEliminar.classList.add("opacity-50", "cursor-not-allowed");
+            }
 
             // Obtener datos actuales de la fila
             const pedidoNombre = fila.children[0].textContent;
@@ -214,13 +240,13 @@
             // Notificar a otros usuarios que el pedido está en edición
             connection.invoke("MarcarPedidoEnEdicion", idPedido).catch(err => console.error(err.toString()));
 
-            // Cambiar el botón de "Enviar" a "Actualizar" y "Cancelar"
+            // Cambiar el botón de "Enviar Pedido" a "Actualizar" y "Cancelar"
             document.getElementById("botonesAccion").innerHTML = `
                 <button onclick="actualizarPedido()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Actualizar</button>
                 <button onclick="cancelarEdicion()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancelar</button>
             `;
 
-            // Detectar cambios en los inputs y actualizar la fila editada en tiempo real
+            // Detectar cambios en los inputs y actualizar la fila en tiempo real
             document.getElementById("pedido").addEventListener("input", actualizarFilaEditada);
             document.getElementById("cantidad").addEventListener("input", actualizarFilaEditada);
         }
@@ -253,6 +279,18 @@
             if (fila) {
                 fila.classList.remove("text-gray-400");
                 fila.children[4].textContent = "En Revisión";
+
+                // Reactivar los botones de la fila editada con estilos normales
+                const btnEditar = fila.querySelector(`button[onclick="editarPedido('${pedidoEditando}')"]`);
+                const btnEliminar = fila.querySelector(`button[onclick="eliminarPedido('${pedidoEditando}')"]`);
+                if (btnEditar) {
+                    btnEditar.disabled = false;
+                    btnEditar.classList.remove("opacity-50", "cursor-not-allowed");
+                }
+                if (btnEliminar) {
+                    btnEliminar.disabled = false;
+                    btnEliminar.classList.remove("opacity-50", "cursor-not-allowed");
+                }
             }
 
             // Limpiar los inputs y restaurar el botón "Enviar Pedido"
@@ -272,8 +310,16 @@
         function cancelarEdicion() {
             if (!pedidoEditando) return;
 
-            // Restaurar la fila a su estado original en todas las sesiones
-            connection.invoke("DesmarcarPedidoEnEdicion", pedidoEditando).catch(err => console.error(err.toString()));
+            const idTemporal = `temp-${usuario}`;
+
+            // Eliminar la fila del frontend
+            const fila = document.getElementById(pedidoEditando);
+            if (fila) {
+                fila.remove();
+            }
+
+            // Notificar al servidor para eliminar la fila en otros clientes
+            connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err.toString()));
 
             // Limpiar los inputs y restaurar el botón "Enviar Pedido"
             document.getElementById("pedido").value = "";
@@ -284,7 +330,7 @@
                 <button onclick="agregarPedido()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enviar Pedido</button>
             `;
 
-            // Eliminar evento de actualización en tiempo real
+            // Eliminar eventos de actualización en tiempo real
             document.getElementById("pedido").removeEventListener("input", actualizarFilaEditada);
             document.getElementById("cantidad").removeEventListener("input", actualizarFilaEditada);
         }
@@ -307,6 +353,11 @@
         function eliminarPedido(idPedido) {
             connection.invoke("EliminarPedido", usuario, idPedido).catch(err => console.error(err.toString()));
         }
+        
+        function eliminarFilaTemporalLocal(idTemporal) {
+            const fila = document.getElementById(idTemporal);
+            if (fila) fila.remove();
+        }
 
         connection.on("ActualizarFilaTemporal", (tempPedido) => {
             actualizarFilaTemporalLocal(tempPedido);
@@ -316,11 +367,6 @@
             eliminarFilaTemporalLocal(idTemporal);
         });
 
-        function eliminarFilaTemporalLocal(idTemporal) {
-            const fila = document.getElementById(idTemporal);
-            if (fila) fila.remove();
-        }
-
         connection.on("ActualizarPedidos", (pedidos) => {
             const tabla = document.getElementById("tablaPedidos");
             tabla.innerHTML = "";
@@ -328,7 +374,11 @@
             pedidos.slice().reverse().forEach(pedido => {
                 const fila = document.createElement("tr");
                 fila.classList.add("border-b");
-                fila.id = pedido.id; // Asignar el ID para encontrarlo después si se edita
+                fila.id = pedido.id;
+
+                // Verificar si el pedido pertenece al usuario actual
+                const esPropio = pedido.usuario === usuario;
+
                 fila.innerHTML = `
                     <td class="p-3">${pedido.pedidoNombre}</td>
                     <td class="p-3">${pedido.cantidad}</td>
@@ -336,7 +386,7 @@
                     <td class="p-3">${pedido.usuario}</td>
                     <td class="p-3 text-yellow-500">${pedido.estatus}</td>
                     <td class="p-3">
-                        ${pedido.usuario === usuario ? `
+                        ${esPropio ? `
                             <button onclick="editarPedido('${pedido.id}')" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">Editar</button>
                             <button onclick="eliminarPedido('${pedido.id}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Eliminar</button>
                         ` : ""}
@@ -402,8 +452,28 @@
         document.getElementById("pedido").addEventListener("input", actualizarFilaTemporal);
         document.getElementById("cantidad").addEventListener("input", actualizarFilaTemporal);
 
+        // Detectar salida de la página y eliminar la fila en edición
+        window.addEventListener("beforeunload", function () {
+            if (pedidoEditando) {
+                cancelarEdicion();
+            }
+        });
+
+        // Detectar si la pestaña se oculta y eliminar la fila en edición
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden && pedidoEditando) {
+                cancelarEdicion();
+            }
+        });
+
+        // Detecta si se pierde el internet y eliminar la fila
+        window.addEventListener("offline", function () {
+            if (pedidoEditando) {
+                cancelarEdicion();
+            }
+        });
+
 
     </script>
-</body>
-</html>
 
+</div>
