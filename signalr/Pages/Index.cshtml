@@ -24,6 +24,18 @@
                 <p class="fw-semibold">Bienvenido, <span id="nombreUsuario" class="text-primary"></span></p>
             </div>
 
+            <!-- Dropdown de Tipo de Pedido -->
+            <div class="dropdown-container mb-3">
+                <button id="tipoPedidoBtn" class="dropdown-btn">Seleccionar Tipo de Pedido</button>
+                <div class="dropdown-content">
+                    <a data-tipo="D1" data-color="red" onclick="seleccionarTipoPedido(this)">🔴 D1 - Unidades inmovilizadas</a>
+                    <a data-tipo="D2" data-color="yellow" onclick="seleccionarTipoPedido(this)">🟡 D2 - Pedidos emergentes</a>
+                    <a data-tipo="D3" data-color="green" onclick="seleccionarTipoPedido(this)">🟢 D3 - Carga libre</a>
+                    <a data-tipo="D4" data-color="purple" onclick="seleccionarTipoPedido(this)">🟣 D4 - Material peligroso</a>
+                    <a data-tipo="D5" data-color="blue" onclick="seleccionarTipoPedido(this)">🔵 D5 - Stock y piezas de colisión</a>
+                </div>
+            </div>
+
             <!-- Formulario para agregar pedido -->
             <div class="bg-white p-4 rounded shadow mb-4">
                 <h3 class="h5 mb-3">Agregar Pedido</h3>
@@ -66,10 +78,10 @@
 
             <!-- Tabla de pedidos -->
             <div class="bg-white p-4 rounded shadow">
-                <table class="table table-bordered text-center">
-                    <thead class="table-light">
+                <table class="table table-bordered text-center" id="tablaPedidosContainer">
+                    <thead id="tablaPedidosHead" class="table-light">
                         <tr>
-                            <th>N°</th> <!-- Nueva columna para numeración -->
+                            <th>N°</th>
                             <th>Clave</th>
                             <th>Pedido</th>
                             <th>Cantidad</th>
@@ -85,8 +97,8 @@
                 </table>
             </div>
 
-
         </div>
+
 
     </div>
 
@@ -112,11 +124,44 @@
         let pedidoTemporal = null; // Guardar fila temporal
         let idTemporal = crypto.randomUUID(); // ID único para la fila temporal
         let pedidoEditando = null; // Guardar el pedido en edición
+        let tipoPedidoSeleccionado = "D1";
+        let claseColorSeleccionado = "table-danger";
 
         connection.start().then(() => {
-            console.log("Conectado a SignalR");
             connection.invoke("ObtenerPedidos").catch(err => console.error(err.toString()));
         });
+
+             document.getElementById("tipoPedidoBtn").addEventListener("click", function () {
+            document.querySelector(".dropdown-content").classList.toggle("show");
+        });
+
+        function seleccionarTipoPedido(elemento) {
+            tipoPedidoSeleccionado = elemento.getAttribute("data-tipo");
+            claseColorSeleccionado = elemento.getAttribute("data-color");
+
+            document.getElementById("tipoPedidoBtn").textContent = elemento.textContent;
+
+            actualizarColorTabla();
+        }
+
+        function actualizarColorTabla() {
+            const head = document.getElementById("tablaPedidosHead");
+            const body = document.getElementById("tablaPedidos");
+
+            head.className = `${claseColorSeleccionado}-head`;
+            body.className = `${claseColorSeleccionado}-body`;
+        }
+
+        window.onclick = function (event) {
+            if (!event.target.matches('.dropdown-btn')) {
+                let dropdowns = document.getElementsByClassName("dropdown-content");
+                for (let i = 0; i < dropdowns.length; i++) {
+                    if (dropdowns[i].classList.contains('show')) {
+                        dropdowns[i].classList.remove('show');
+                    }
+                }
+            }
+        }
 
         function guardarNombre() {
             usuario = document.getElementById("nombreVendedor").value.trim();
@@ -166,8 +211,6 @@
                 usuario: usuario,
                 estatus: "Pendiente"
             };
-
-            console.log("📢 Fila Temporal Enviada a Todos:", tempPedido);
 
             // **🔹 Ahora enviamos la fila temporal en tiempo real a TODOS LOS USUARIOS**
             connection.invoke("ActualizarFilaTemporal", tempPedido).catch(err => console.error(err));
@@ -426,7 +469,6 @@
                 <button onclick="agregarPedido()" class="btn btn-success">Enviar Pedido</button>
             `;
 
-            console.log("🚨 Edición cancelada y inputs limpiados.");
         }
 
         function actualizarFilaEditada() {
@@ -552,7 +594,7 @@
             }
         });
 
-               connection.on("MarcarPedidoEnEdicion", (idPedido) => {
+        connection.on("MarcarPedidoEnEdicion", (idPedido) => {
             try {
                 const fila = document.getElementById(idPedido);
                 if (!fila) return;
@@ -581,7 +623,6 @@
         });
 
         connection.on("PedidoConfirmado", (pedido) => {
-            console.log("📢 Pedido Confirmado:", pedido);
 
             const tabla = document.getElementById("tablaPedidos");
             if (!tabla) {
@@ -628,7 +669,6 @@
         // Detectar cuando el usuario cierra la página y eliminar la fila temporal
         window.addEventListener("beforeunload", function () {
             try {
-                console.log(`🚨 [CLIENTE] Usuario cerró la página. Eliminando fila temporal: ${idTemporal}`);
                 if (pedidoTemporal) {
                     connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err));
                     eliminarFilaTemporalLocal(idTemporal);
@@ -641,7 +681,6 @@
         // Detectar cuando el usuario pierde la conexión a internet y eliminar la fila temporal
         window.addEventListener("offline", function () {
             try {
-                console.log(`🔴 [CLIENTE] Usuario perdió conexión a internet. Eliminando fila temporal: ${idTemporal}`);
                 if (pedidoTemporal) {
                     connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err));
                     eliminarFilaTemporalLocal(idTemporal);
@@ -654,7 +693,6 @@
         // Detectar cuando la pestaña se oculta y eliminar la fila en edición
         document.addEventListener("visibilitychange", function () {
             if (document.hidden && pedidoTemporal) {
-                console.log(`🔴 [CLIENTE] Usuario ocultó la pestaña. Eliminando fila temporal: ${idTemporal}`);
                 connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err));
                 eliminarFilaTemporalLocal(idTemporal);
             }
@@ -664,3 +702,93 @@
     </script>
 
 </div>
+
+<style>
+    /* Estilos del dropdown */
+    .dropdown-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-btn {
+        background-color: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 250px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        z-index: 10;
+    }
+
+        .dropdown-content a {
+            color: black;
+            padding: 10px;
+            display: block;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+            .dropdown-content a:hover {
+                background-color: rgba(0, 0, 0, 0.1);
+            }
+
+    .show {
+        display: block;
+    }
+
+    /* Colores de la tabla */
+    .red-head {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .red-body {
+        background-color: #f8d7da;
+    }
+
+    .yellow-head {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .yellow-body {
+        background-color: #fff3cd;
+    }
+
+    .green-head {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .green-body {
+        background-color: #d4edda;
+    }
+
+    .purple-head {
+        background-color: #6f42c1;
+        color: white;
+    }
+
+    .purple-body {
+        background-color: #e0c3fc;
+    }
+
+    .blue-head {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .blue-body {
+        background-color: #cce5ff;
+    }
+</style>
