@@ -178,20 +178,22 @@
 
         function actualizarFilaTemporalLocal(tempPedido) {
             const tabla = document.getElementById("tablaPedidos");
-
             let filaExistente = document.getElementById(tempPedido.id);
 
             if (!filaExistente) {
                 filaExistente = document.createElement("tr");
                 filaExistente.id = tempPedido.id;
-                filaExistente.classList.add("border-bottom", "text-muted"); // 🔹 Cambiar solo el color del texto a gris
+                filaExistente.classList.add("border-bottom", "text-muted");
+
+                const numeroFila = tabla.rows.length; // Obtener número de fila
 
                 filaExistente.innerHTML = `
+                    <td class="p-3">${numeroFila}</td> <!-- Número de fila -->
                     <td class="p-3">${tempPedido.clavePedido || "..."}</td>
                     <td class="p-3">${tempPedido.pedidoNombre || "..."}</td>
                     <td class="p-3">${tempPedido.cantidad || "..."}</td>
-                    <td class="p-3">${tempPedido.numeroPedido ? tempPedido.numeroPedido : "..."}</td>
-                    <td class="p-3">${tempPedido.observaciones ? tempPedido.observaciones : "..."}</td>
+                    <td class="p-3">${tempPedido.numeroPedido || "..."}</td>
+                    <td class="p-3">${tempPedido.observaciones || "..."}</td>
                     <td class="p-3">${tempPedido.fecha}</td>
                     <td class="p-3">${tempPedido.usuario}</td>
                     <td class="p-3 text-warning">${tempPedido.estatus}</td>
@@ -199,19 +201,15 @@
                 `;
                 tabla.appendChild(filaExistente);
             } else {
-                filaExistente.classList.add("text-muted"); // 🔹 Aplicar color gris al texto de la fila ya existente
-
-                filaExistente.children[0].textContent = tempPedido.clavePedido || "...";
-                filaExistente.children[1].textContent = tempPedido.pedidoNombre || "...";
-                filaExistente.children[2].textContent = tempPedido.cantidad || "...";
-                filaExistente.children[3].textContent = tempPedido.numeroPedido ? tempPedido.numeroPedido : "...";
-                filaExistente.children[4].textContent = tempPedido.observaciones ? tempPedido.observaciones : "...";
-                filaExistente.children[5].textContent = tempPedido.fecha;
-                filaExistente.children[6].textContent = tempPedido.usuario;
-                filaExistente.children[7].textContent = tempPedido.estatus;
+                filaExistente.children[1].textContent = tempPedido.clavePedido || "...";
+                filaExistente.children[2].textContent = tempPedido.pedidoNombre || "...";
+                filaExistente.children[3].textContent = tempPedido.cantidad || "...";
+                filaExistente.children[4].textContent = tempPedido.numeroPedido || "...";
+                filaExistente.children[5].textContent = tempPedido.observaciones || "...";
+                filaExistente.children[6].textContent = tempPedido.fecha;
+                filaExistente.children[7].textContent = tempPedido.usuario;
+                filaExistente.children[8].textContent = tempPedido.estatus;
             }
-
-            console.log("✅ Fila Temporal Local Actualizada con texto gris:", tempPedido);
         }
 
         function agregarPedido() {
@@ -270,44 +268,14 @@
                         btnEliminarAnterior.disabled = false;
                         btnEliminarAnterior.classList.remove("opacity-50", "cursor-not-allowed");
                     }
+                    filaAnterior.classList.remove("text-muted"); // 🔹 Restaurar color normal si había otra fila en edición
                 }
             }
 
             const fila = document.getElementById(idPedido);
             if (!fila) return;
 
-            // Obtener valores de la fila correcta
-            const clavePedido = fila.children[0].textContent.trim();
-            const pedidoNombre = fila.children[1].textContent.trim();
-            const cantidad = fila.children[2].textContent.trim();
-            const numeroPedido = fila.children[3].textContent.trim();
-            const observaciones = fila.children[4].textContent.trim(); // ✅ Asignar correctamente observaciones
-            const fecha = fila.children[5].textContent.trim();
-            const usuarioFila = fila.children[6].textContent.trim();
-
-            // Asignar valores a los inputs
-            document.getElementById("clavePedido").value = clavePedido;
-            document.getElementById("pedido").value = pedidoNombre;
-            document.getElementById("cantidad").value = cantidad;
-            document.getElementById("numeroPedido").value = numeroPedido;
-            document.getElementById("observaciones").value = observaciones; // ✅ Se mantiene el valor correcto
-
-            // Guardar ID del pedido en edición
-            pedidoEditando = idPedido;
-
-            // ✅ Solo cambiar el estatus sin modificar observaciones
-            fila.children[7].textContent = "Pendiente"; // ✅ Cambia solo la columna de Estatus
-
-            // Notificar al backend para marcar en edición
-            connection.invoke("MarcarPedidoEnEdicion", idPedido).catch(err => console.error(err));
-
-            // Cambiar el botón de "Enviar Pedido" a "Actualizar" y "Cancelar"
-            document.getElementById("botonesAccion").innerHTML = `
-                <button onclick="actualizarPedido()" class="btn btn-primary">Actualizar</button>
-                <button onclick="cancelarEdicion()" class="btn btn-secondary">Cancelar</button>
-            `;
-
-            // Desactivar los botones de la fila seleccionada y aplicar efecto visual
+            // **Desactivar botones de edición y eliminación**
             const btnEditar = fila.querySelector(`button[onclick="editarPedido('${idPedido}')"]`);
             const btnEliminar = fila.querySelector(`button[onclick="eliminarPedido('${idPedido}')"]`);
 
@@ -320,7 +288,36 @@
                 btnEliminar.classList.add("opacity-50", "cursor-not-allowed");
             }
 
-            // Detectar cambios en los inputs y actualizar la fila en tiempo real
+            // **Extraer los datos de la fila**
+            const clavePedido = fila.children[1].textContent;
+            const pedidoNombre = fila.children[2].textContent;
+            const cantidad = fila.children[3].textContent;
+            const numeroPedido = fila.children[4].textContent;
+            const observaciones = fila.children[5].textContent;
+
+            // **Asignar los valores a los inputs**
+            document.getElementById("clavePedido").value = clavePedido;
+            document.getElementById("pedido").value = pedidoNombre;
+            document.getElementById("cantidad").value = cantidad;
+            document.getElementById("numeroPedido").value = numeroPedido;
+            document.getElementById("observaciones").value = observaciones;
+
+            // **Marcar el pedido en edición**
+            pedidoEditando = idPedido;
+
+            // **Cambiar el color del texto de la fila en edición**
+            fila.classList.add("text-muted");
+
+            // **Notificar al backend que el pedido está en edición**
+            connection.invoke("MarcarPedidoEnEdicion", idPedido).catch(err => console.error(err));
+
+            // **Actualizar los botones de acción**
+            document.getElementById("botonesAccion").innerHTML = `
+                <button onclick="actualizarPedido()" class="btn btn-primary">Actualizar</button>
+                <button onclick="cancelarEdicion()" class="btn btn-secondary">Cancelar</button>
+            `;
+
+            // **Detectar cambios en los inputs y reflejarlos en la fila en tiempo real**
             document.getElementById("clavePedido").addEventListener("input", actualizarFilaEditada);
             document.getElementById("pedido").addEventListener("input", actualizarFilaEditada);
             document.getElementById("cantidad").addEventListener("input", actualizarFilaEditada);
@@ -331,7 +328,7 @@
         function actualizarPedido() {
             if (!pedidoEditando) return;
 
-            // Obtener los valores editados de los inputs
+            // **Obtener los valores editados**
             const clavePedido = document.getElementById("clavePedido").value.trim();
             const pedidoNombre = document.getElementById("pedido").value.trim();
             const cantidad = document.getElementById("cantidad").value.trim();
@@ -362,21 +359,23 @@
                 console.error("Error al actualizar el pedido:", error);
             }
 
-            // Restaurar la fila a su estado normal en la tabla
+            // **Restaurar la fila en la tabla**
             const fila = document.getElementById(pedidoEditando);
             if (fila) {
-                fila.children[0].textContent = clavePedido;
-                fila.children[1].textContent = pedidoNombre;
-                fila.children[2].textContent = cantidad;
-                fila.children[3].textContent = numeroPedido;
-                fila.children[4].textContent = observaciones;
-                fila.children[5].textContent = fecha;
-                fila.children[6].textContent = usuario;
-                fila.children[7].textContent = "En Revisión";
-                fila.classList.remove("text-secondary");
+                fila.classList.remove("text-muted");
+
+                // **Asignamos los valores en las columnas correctas considerando la nueva numeración**
+                fila.children[1].textContent = clavePedido;      // Clave Pedido
+                fila.children[2].textContent = pedidoNombre;     // Nombre Pedido
+                fila.children[3].textContent = cantidad;         // Cantidad
+                fila.children[4].textContent = numeroPedido;     // Número Pedido
+                fila.children[5].textContent = observaciones;    // Observaciones
+                fila.children[6].textContent = fecha;            // Fecha
+                fila.children[7].textContent = usuario;          // Usuario
+                fila.children[8].textContent = "En Revisión";    // **Estatus ahora está en la columna correcta**
             }
 
-            // Reactivar los botones desactivados
+            // **Restaurar los botones**
             const btnEditar = fila.querySelector(`button[onclick="editarPedido('${pedidoEditando}')"]`);
             const btnEliminar = fila.querySelector(`button[onclick="eliminarPedido('${pedidoEditando}')"]`);
             if (btnEditar) {
@@ -388,16 +387,13 @@
                 btnEliminar.classList.remove("opacity-50", "cursor-not-allowed");
             }
 
-            // **🔹 LIMPIAR LOS INPUTS DESPUÉS DE ACTUALIZAR**
+            // **Limpiar los inputs y restaurar el botón "Enviar Pedido"**
             limpiarInputs();
-
             pedidoEditando = null;
 
             document.getElementById("botonesAccion").innerHTML = `
                 <button onclick="agregarPedido()" class="btn btn-success">Enviar Pedido</button>
             `;
-
-            console.log("✅ Pedido actualizado y inputs limpiados.");
         }
 
         function cancelarEdicion() {
@@ -434,24 +430,24 @@
         }
 
         function actualizarFilaEditada() {
-            if (!pedidoEditando) return; // Si no estamos editando, salir
+            if (!pedidoEditando) return;
 
             const fila = document.getElementById(pedidoEditando);
             if (!fila) return;
 
-            // Obtener valores de los inputs editados
+            // **Obtener los valores de los inputs editados**
             const clavePedido = document.getElementById("clavePedido")?.value.trim() || "...";
             const pedidoNombre = document.getElementById("pedido")?.value.trim() || "...";
             const cantidad = document.getElementById("cantidad")?.value.trim() || "...";
             const numeroPedido = document.getElementById("numeroPedido")?.value.trim() || "...";
             const observaciones = document.getElementById("observaciones")?.value.trim() || "...";
 
-            // Actualizar la fila en tiempo real
-            fila.children[0].textContent = clavePedido;      // ✅ Clave de Pedido
-            fila.children[1].textContent = pedidoNombre;     // ✅ Nombre del Pedido
-            fila.children[2].textContent = cantidad;         // ✅ Cantidad
-            fila.children[3].textContent = numeroPedido;     // ✅ Número de Pedido
-            fila.children[4].textContent = observaciones;    // ✅ Observaciones
+            // **Actualizar la fila en tiempo real**
+            fila.children[1].textContent = clavePedido;
+            fila.children[2].textContent = pedidoNombre;
+            fila.children[3].textContent = cantidad;
+            fila.children[4].textContent = numeroPedido;
+            fila.children[5].textContent = observaciones;
         }
 
         function eliminarPedido(idPedido) {
@@ -499,25 +495,27 @@
             }
         });
 
+        // Modificación en la función de agregar pedido
         connection.on("ActualizarPedidos", (pedidos) => {
             try {
                 const tabla = document.getElementById("tablaPedidos");
                 if (!tabla) {
-                    console.error("Tabla de pedidos no encontrada");
+                    console.error("❌ Tabla de pedidos no encontrada");
                     return;
                 }
 
                 tabla.innerHTML = ""; // Limpiar la tabla antes de agregar nuevos datos
 
-                pedidos.slice().reverse().forEach(pedido => {
+                pedidos.forEach((pedido, index) => {
                     const fila = document.createElement("tr");
                     fila.classList.add("border-bottom");
                     fila.id = pedido.id;
 
-                    // ✅ Verificar si el pedido pertenece al usuario actual
-                    const esPropio = pedido.usuario === usuario;
+                    // 🔹 **Restaurar validación para que solo el usuario que hizo el pedido vea los botones**
+                    const esPropio = usuario && pedido.usuario && usuario.trim() === pedido.usuario.trim();
 
                     fila.innerHTML = `
+                        <td class="p-3">${index + 1}</td> <!-- Número del pedido -->
                         <td class="p-3">${pedido.clavePedido}</td>
                         <td class="p-3">${pedido.pedidoNombre}</td>
                         <td class="p-3">${pedido.cantidad}</td>
@@ -536,30 +534,34 @@
                     tabla.appendChild(fila);
                 });
             } catch (error) {
-                console.error("Error al actualizar pedidos:", error);
+                console.error("❌ Error al actualizar pedidos:", error);
             }
         });
 
+        // Modificación en la función de eliminación
         connection.on("PedidoEliminado", (idPedido) => {
             try {
                 document.getElementById("tablaPedidos").querySelectorAll("tr").forEach(row => {
                     if (row.id === idPedido) row.remove();
                 });
+
+                // Reajustar la numeración después de eliminar
+                actualizarNumeracionPedidos();
             } catch (error) {
                 console.error("Error al eliminar pedido:", error);
             }
         });
 
-        connection.on("MarcarPedidoEnEdicion", (idPedido) => {
+               connection.on("MarcarPedidoEnEdicion", (idPedido) => {
             try {
                 const fila = document.getElementById(idPedido);
                 if (!fila) return;
 
-                // Aplicar estilo gris y cambiar estado a "Pendiente"
+                // Aplicar estilo grisaseo al texto de la fila en edición
                 fila.classList.add("text-secondary");
 
-                // ✅ Se asegura que solo cambia la columna de Estatus y NO Observaciones
-                fila.children[7].textContent = "Pendiente";  // ✅ Modifica correctamente el Estatus
+                // ✅ Ahora la columna de estatus es la 8 (por la numeración agregada)
+                fila.children[8].textContent = "Pendiente"; // 🔹 Se coloca correctamente en la columna de Estatus
             } catch (error) {
                 console.error("Error al marcar pedido en edición:", error);
             }
@@ -583,25 +585,35 @@
 
             const tabla = document.getElementById("tablaPedidos");
             if (!tabla) {
-                console.error("Tabla de pedidos no encontrada");
+                console.error("❌ Tabla de pedidos no encontrada");
                 return;
             }
 
+            // **Eliminar fila temporal si existe**
+            const idTemporal = `temp-${pedido.usuario}`;
+            eliminarFilaTemporalLocal(idTemporal);
+
+            // **Verificar si el pedido pertenece al usuario actual**
+            const esPropio = usuario && pedido.usuario && usuario.trim() === pedido.usuario.trim();
+
+            // **Obtener la cantidad de filas para numerar correctamente**
+            const numeroPedido = tabla.rows.length + 1;
+
+            // **Crear la fila final en la tabla**
             const fila = document.createElement("tr");
             fila.id = pedido.id;
-            fila.classList.add("border-bottom"); // ✅ Sin texto gris
-
-            const esPropio = pedido.usuario === usuario;
+            fila.classList.add("border-bottom");
 
             fila.innerHTML = `
-                <td class="p-3">${pedido.clavePedido || "..."}</td>
-                <td class="p-3">${pedido.pedidoNombre || "..."}</td>
-                <td class="p-3">${pedido.cantidad || "..."}</td>
-                <td class="p-3">${pedido.numeroPedido || "..."}</td>
-                <td class="p-3">${pedido.observaciones || "N/A"}</td>
-                <td class="p-3">${pedido.fecha}</td>
-                <td class="p-3">${pedido.usuario}</td>
-                <td class="p-3 text-warning">${pedido.estatus}</td>
+                <td class="p-3">${numeroPedido}</td> <!-- Número de pedido -->
+                <td class="p-3">${pedido.clavePedido || "..."}</td> <!-- Clave Pedido -->
+                <td class="p-3">${pedido.pedidoNombre || "..."}</td> <!-- Nombre Pedido -->
+                <td class="p-3">${pedido.cantidad || "..."}</td> <!-- Cantidad -->
+                <td class="p-3">${pedido.numeroPedido || "..."}</td> <!-- Número Pedido -->
+                <td class="p-3">${pedido.observaciones || "N/A"}</td> <!-- Observaciones -->
+                <td class="p-3">${pedido.fecha}</td> <!-- Fecha -->
+                <td class="p-3">${pedido.usuario}</td> <!-- Usuario -->
+                <td class="p-3 text-warning">${pedido.estatus}</td> <!-- Estatus -->
                 <td class="p-3">
                     ${esPropio ? `
                         <button onclick="editarPedido('${pedido.id}')" class="btn btn-warning btn-sm">Editar</button>
@@ -609,6 +621,7 @@
                     ` : ""}
                 </td>
             `;
+
             tabla.appendChild(fila);
         });
 
