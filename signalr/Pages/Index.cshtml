@@ -162,6 +162,12 @@
     }
 
     function seleccionarTipoPedido(tipo) {
+        // Actualizar la variable global con el tipo seleccionado
+        tipoPedidoSeleccionado = tipo;
+
+        // Cambiar de grupo: salir de grupos anteriores y unirse al nuevo grupo
+        connection.invoke("CambiarGrupo", tipo).catch(err => console.error(err));
+
         const pedidoSection = document.getElementById("pedidoSection");
         const tipoPedidoTexto = document.getElementById("tipoPedidoTexto");
         const tablaPedidosHead = document.getElementById("tablaPedidosHead");
@@ -171,40 +177,42 @@
         let colorFuerte, colorClaro;
 
         switch (tipo) {
-            case "D1": // Rojo
+            case "D1":
                 colorFuerte = "bg-danger text-white";
                 colorClaro = "table-danger";
                 tipoPedidoTexto.textContent = "D1 - Unidades inmovilizadas";
                 break;
-            case "D2": // Amarillo
+            case "D2":
                 colorFuerte = "bg-warning text-dark";
                 colorClaro = "table-warning";
                 tipoPedidoTexto.textContent = "D2 - Pedidos emergentes";
                 break;
-            case "D3": // Verde
+            case "D3":
                 colorFuerte = "bg-success text-white";
                 colorClaro = "table-success";
                 tipoPedidoTexto.textContent = "D3 - Carga libre";
                 break;
-            case "D4": // Morado (color personalizado)
-                colorFuerte = "bg-purple-custom text-white"; // Usamos la clase CSS personalizada
+            case "D4":
+                colorFuerte = "bg-purple-custom text-white";
                 colorClaro = "table-purple-custom";
                 tipoPedidoTexto.textContent = "D4 - Material peligroso";
                 break;
-            case "D5": // Azul
+            case "D5":
                 colorFuerte = "bg-primary text-white";
                 colorClaro = "table-primary";
                 tipoPedidoTexto.textContent = "D5 - Stock y piezas de colisión";
                 break;
         }
 
-        // Aplicar colores a la tabla
-        tablaPedidosHead.className = colorFuerte; // Color fuerte en thead
-        tablaPedidos.className = colorClaro; // Color claro en tbody
+        tablaPedidosHead.className = colorFuerte;
+        tablaPedidos.className = colorClaro;
 
         // Mostrar la sección de pedidos y ocultar la selección de tipo
         pedidoSection.classList.remove("d-none");
         tipoPedidoCard.classList.add("d-none");
+
+        // Solicitar al servidor la lista actualizada de pedidos
+        connection.invoke("ObtenerPedidos").catch(err => console.error(err));
     }
 
      function abrirSeleccionTipo() {
@@ -212,43 +220,42 @@
         document.getElementById("tipoPedidoCard").classList.remove("d-none");
     }
 
-     function actualizarFilaTemporal() {
-         if (pedidoEditando) return; // No actualizar si se está editando un pedido
+    function actualizarFilaTemporal() {
+        if (pedidoEditando) return; // No actualizar si se está editando un pedido
 
-         const clavePedido = document.getElementById("clavePedido").value.trim();
-         const pedido = document.getElementById("pedido").value.trim();
-         const cantidad = document.getElementById("cantidad").value.trim();
-         const numeroPedido = document.getElementById("numeroPedido").value.trim();
-         const observaciones = document.getElementById("observaciones").value.trim();
-         const fecha = new Date().toISOString().split('T')[0];
+        const clavePedido = document.getElementById("clavePedido").value.trim();
+        const pedido = document.getElementById("pedido").value.trim();
+        const cantidad = document.getElementById("cantidad").value.trim();
+        const numeroPedido = document.getElementById("numeroPedido").value.trim();
+        const observaciones = document.getElementById("observaciones").value.trim();
+        const fecha = new Date().toISOString().split('T')[0];
 
-         const idTemporal = `temp-${usuario}`;
+        const idTemporal = `temp-${usuario}`;
 
-         // **🔹 Si hay al menos UN DATO ingresado, enviamos la fila a todos**
-         if (!clavePedido && !pedido && !cantidad && !numeroPedido && !observaciones) {
-             connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err));
-             eliminarFilaTemporalLocal(idTemporal);
-             return;
-         }
+        // Si no se ingresa ningún dato, se elimina la fila temporal
+        if (!clavePedido && !pedido && !cantidad && !numeroPedido && !observaciones) {
+            connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err));
+            eliminarFilaTemporalLocal(idTemporal);
+            return;
+        }
 
-         const tempPedido = {
-             id: idTemporal,
-             clavePedido: clavePedido || "...",
-             pedidoNombre: pedido || "...",
-             cantidad: cantidad || "...",
-             numeroPedido: numeroPedido || "...",
-             observaciones: observaciones || "...",
-             fecha: fecha,
-             usuario: usuario,
-             estatus: "Pendiente"
-         };
+        // Asegurarse de incluir el tipo seleccionado
+        const tempPedido = {
+            id: idTemporal,
+            clavePedido: clavePedido || "...",
+            pedidoNombre: pedido || "...",
+            cantidad: cantidad || "...",
+            numeroPedido: numeroPedido || "...",
+            observaciones: observaciones || "...",
+            fecha: fecha,
+            usuario: usuario,
+            estatus: "Pendiente",
+            tipoPedido: tipoPedidoSeleccionado  // <<-- Se agrega esta propiedad
+        };
 
-         // **🔹 Ahora enviamos la fila temporal en tiempo real a TODOS LOS USUARIOS**
-         connection.invoke("ActualizarFilaTemporal", tempPedido).catch(err => console.error(err));
-
-         // **🔹 También la mostramos localmente de inmediato**
-         actualizarFilaTemporalLocal(tempPedido);
-     }
+        connection.invoke("ActualizarFilaTemporal", tempPedido).catch(err => console.error(err));
+        actualizarFilaTemporalLocal(tempPedido);
+    }
 
      function actualizarFilaTemporalLocal(tempPedido) {
          const tabla = document.getElementById("tablaPedidos");
@@ -286,46 +293,44 @@
          }
      }
 
-     function agregarPedido() {
-         const clavePedido = document.getElementById("clavePedido").value.trim();
-         const pedido = document.getElementById("pedido").value.trim();
-         const cantidad = document.getElementById("cantidad").value.trim();
-         const numeroPedido = document.getElementById("numeroPedido").value.trim();
-         const observaciones = document.getElementById("observaciones").value.trim();
-         const fecha = new Date().toISOString().split('T')[0];
+    function agregarPedido() {
+        const clavePedido = document.getElementById("clavePedido").value.trim();
+        const pedido = document.getElementById("pedido").value.trim();
+        const cantidad = document.getElementById("cantidad").value.trim();
+        const numeroPedido = document.getElementById("numeroPedido").value.trim();
+        const observaciones = document.getElementById("observaciones").value.trim();
+        const fecha = new Date().toISOString().split('T')[0];
 
-         if (!clavePedido || !pedido || !cantidad || !numeroPedido || !usuario) {
-             alert("Todos los campos son obligatorios excepto observaciones.");
-             return;
-         }
+        if (!clavePedido || !pedido || !cantidad || !numeroPedido || !usuario) {
+            alert("Todos los campos son obligatorios excepto observaciones.");
+            return;
+        }
 
-         const nuevoPedido = {
-             id: crypto.randomUUID(),
-             clavePedido: clavePedido,
-             pedidoNombre: pedido,
-             cantidad: cantidad,
-             numeroPedido: numeroPedido,
-             observaciones: observaciones,
-             fecha: fecha,
-             usuario: usuario,
-             estatus: "En revisión"
-         };
+        const nuevoPedido = {
+            id: crypto.randomUUID(),
+            clavePedido: clavePedido,
+            pedidoNombre: pedido,
+            cantidad: cantidad,
+            numeroPedido: numeroPedido,
+            observaciones: observaciones,
+            fecha: fecha,
+            usuario: usuario,
+            estatus: "En revisión",
+            tipoPedido: tipoPedidoSeleccionado  // Se asigna el tipo seleccionado
+        };
 
-         try {
-             connection.invoke("EnviarPedido", nuevoPedido);
-             connection.invoke("EliminarFilaTemporal", idTemporal);
-             eliminarFilaTemporalLocal(idTemporal);
-         } catch (error) {
-             console.error("Error al enviar el pedido:", error);
-         }
+        console.log("Enviando pedido:", nuevoPedido);
 
-         // Limpiar los inputs después de enviar
-         document.getElementById("clavePedido").value = "";
-         document.getElementById("pedido").value = "";
-         document.getElementById("cantidad").value = "";
-         document.getElementById("numeroPedido").value = "";
-         document.getElementById("observaciones").value = "";
-     }
+        try {
+            connection.invoke("EnviarPedido", nuevoPedido);
+            connection.invoke("EliminarFilaTemporal", `temp-${usuario}`);
+            eliminarFilaTemporalLocal(`temp-${usuario}`);
+        } catch (error) {
+            console.error("Error al enviar el pedido:", error);
+        }
+
+        limpiarInputs();
+    }
 
      function editarPedido(idPedido) {
          if (pedidoEditando) {
@@ -551,6 +556,46 @@
              fila.children[0].textContent = index + 1; // Reasigna el número
          });
      }
+   
+     // Función para renderizar la tabla filtrando los pedidos por el tipo seleccionado
+    function renderPedidos() {
+        const tabla = document.getElementById("tablaPedidos");
+        if (!tabla) {
+            console.error("❌ Tabla de pedidos no encontrada");
+            return;
+        }
+
+        tabla.innerHTML = ""; // Limpiar la tabla
+
+        // Filtrar los pedidos según el tipo seleccionado
+        const pedidosFiltrados = listaPedidos.filter(pedido => pedido.tipoPedido === tipoPedidoSeleccionado);
+
+        pedidosFiltrados.forEach((pedido, index) => {
+            const esPropio = usuario && pedido.usuario && usuario.trim() === pedido.usuario.trim();
+
+            const fila = document.createElement("tr");
+            fila.classList.add("border-bottom");
+            fila.id = pedido.id;
+            fila.innerHTML = `
+                <td class="p-3">${index + 1}</td>
+                <td class="p-3">${pedido.clavePedido}</td>
+                <td class="p-3">${pedido.pedidoNombre}</td>
+                <td class="p-3">${pedido.cantidad}</td>
+                <td class="p-3">${pedido.numeroPedido}</td>
+                <td class="p-3">${pedido.observaciones ? pedido.observaciones : "N/A"}</td>
+                <td class="p-3">${pedido.fecha}</td>
+                <td class="p-3">${pedido.usuario}</td>
+                <td class="p-3 text-warning">${pedido.estatus}</td>
+                <td class="p-3">
+                    ${esPropio ? `
+                        <button onclick="editarPedido('${pedido.id}')" class="btn btn-warning btn-sm">Editar</button>
+                        <button onclick="eliminarPedido('${pedido.id}')" class="btn btn-danger btn-sm">Eliminar</button>
+                    ` : ""}
+                </td>
+            `;
+            tabla.appendChild(fila);
+        });
+    }
 
      connection.on("ActualizarFilaTemporal", (tempPedido) => {
          try {
@@ -568,48 +613,18 @@
          }
      });
 
-     // Modificación en la función de agregar pedido
-     connection.on("ActualizarPedidos", (pedidos) => {
-         try {
-             const tabla = document.getElementById("tablaPedidos");
-             if (!tabla) {
-                 console.error("❌ Tabla de pedidos no encontrada");
-                 return;
-             }
+        // Actualización de pedidos desde el servidor
+    connection.on("ActualizarPedidos", (pedidos) => {
+        try {
+            // Guardar la lista completa de pedidos
+            listaPedidos = pedidos;
+            // Renderizar la tabla filtrando por el tipo seleccionado
+            renderPedidos();
+        } catch (error) {
+            console.error("❌ Error al actualizar pedidos:", error);
+        }
+    });
 
-             tabla.innerHTML = ""; // Limpiar la tabla antes de agregar nuevos datos
-
-             pedidos.forEach((pedido, index) => {
-                 const fila = document.createElement("tr");
-                 fila.classList.add("border-bottom");
-                 fila.id = pedido.id;
-
-                 // 🔹 **Restaurar validación para que solo el usuario que hizo el pedido vea los botones**
-                 const esPropio = usuario && pedido.usuario && usuario.trim() === pedido.usuario.trim();
-
-                 fila.innerHTML = `
-                     <td class="p-3">${index + 1}</td> <!-- Número del pedido -->
-                     <td class="p-3">${pedido.clavePedido}</td>
-                     <td class="p-3">${pedido.pedidoNombre}</td>
-                     <td class="p-3">${pedido.cantidad}</td>
-                     <td class="p-3">${pedido.numeroPedido}</td>
-                     <td class="p-3">${pedido.observaciones ? pedido.observaciones : "N/A"}</td>
-                     <td class="p-3">${pedido.fecha}</td>
-                     <td class="p-3">${pedido.usuario}</td>
-                     <td class="p-3 text-warning">${pedido.estatus}</td>
-                     <td class="p-3">
-                         ${esPropio ? `
-                             <button onclick="editarPedido('${pedido.id}')" class="btn btn-warning btn-sm">Editar</button>
-                             <button onclick="eliminarPedido('${pedido.id}')" class="btn btn-danger btn-sm">Eliminar</button>
-                         ` : ""}
-                     </td>
-                 `;
-                 tabla.appendChild(fila);
-             });
-         } catch (error) {
-             console.error("❌ Error al actualizar pedidos:", error);
-         }
-     });
 
      // Modificación en la función de eliminación
      connection.on("PedidoEliminado", (idPedido) => {
