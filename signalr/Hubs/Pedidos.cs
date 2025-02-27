@@ -10,27 +10,28 @@ namespace signalr.Hubs
         private static List<Pedido> _pedidos = new List<Pedido>();
         private static Dictionary<string, Pedido> _pedidosTemporales = new Dictionary<string, Pedido>();
 
+        public async Task CambiarGrupo(string tipoPedido)
+        {
+            string connectionId = Context.ConnectionId;
+
+            // Remover de todos los grupos previos
+            await Groups.RemoveFromGroupAsync(connectionId, "D1");
+            await Groups.RemoveFromGroupAsync(connectionId, "D2");
+            await Groups.RemoveFromGroupAsync(connectionId, "D3");
+            await Groups.RemoveFromGroupAsync(connectionId, "D4");
+            await Groups.RemoveFromGroupAsync(connectionId, "D5");
+
+            // Agregar al nuevo grupo
+            await Groups.AddToGroupAsync(connectionId, tipoPedido);
+            await Clients.Caller.SendAsync("GrupoCambiado", tipoPedido);
+        }
+
+
         public async Task EnviarPedido(Pedido nuevoPedido)
         {
             nuevoPedido.Estatus = "En revisión";
-
-            // Imprimir en consola los datos del pedido (incluyendo el tipo)
-            Console.WriteLine("Nuevo pedido enviado:");
-            Console.WriteLine($"ID: {nuevoPedido.Id}");
-            Console.WriteLine($"ClavePedido: {nuevoPedido.ClavePedido}");
-            Console.WriteLine($"PedidoNombre: {nuevoPedido.PedidoNombre}");
-            Console.WriteLine($"Cantidad: {nuevoPedido.Cantidad}");
-            Console.WriteLine($"NumeroPedido: {nuevoPedido.NumeroPedido}");
-            Console.WriteLine($"Observaciones: {nuevoPedido.Observaciones}");
-            Console.WriteLine($"Fecha: {nuevoPedido.Fecha}");
-            Console.WriteLine($"Usuario: {nuevoPedido.Usuario}");
-            Console.WriteLine($"Estatus: {nuevoPedido.Estatus}");
-            Console.WriteLine($"TipoPedido: {nuevoPedido.TipoPedido}");
-
-            // Definir el ID temporal basado en el usuario
             string idTemporal = $"temp-{nuevoPedido.Usuario}";
 
-            // Eliminar la versión temporal del pedido enviado
             if (_pedidosTemporales.ContainsKey(idTemporal))
             {
                 _pedidosTemporales.Remove(idTemporal);
@@ -38,74 +39,45 @@ namespace signalr.Hubs
             }
 
             _pedidos.Add(nuevoPedido);
-            // Enviar el pedido confirmado solo al grupo correspondiente
+
+            // ✅ Ahora solo lo enviamos al grupo correspondiente
             await Clients.Group(nuevoPedido.TipoPedido).SendAsync("PedidoConfirmado", nuevoPedido);
         }
 
-        public async Task EliminarPedido(string usuario, string idPedido)
+        public async Task EliminarPedido(string usuario, string idPedido, string tipoPedido)
         {
             var pedido = _pedidos.FirstOrDefault(p => p.Id == idPedido && p.Usuario == usuario);
             if (pedido != null)
             {
                 _pedidos.Remove(pedido);
-                await ActualizarPedidos();
+                await Clients.Group(tipoPedido).SendAsync("PedidoEliminado", idPedido);
             }
         }
 
-        public async Task ObtenerPedidos()
+        public async Task ObtenerPedidos(string tipoPedido)
         {
-            await Clients.Caller.SendAsync("ActualizarPedidos", _pedidos.Concat(_pedidosTemporales.Values).ToList());
+            var pedidosFiltrados = _pedidos
+                .Where(p => p.TipoPedido == tipoPedido)
+                .Concat(_pedidosTemporales.Values.Where(p => p.TipoPedido == tipoPedido))
+                .ToList();
+
+            await Clients.Caller.SendAsync("ActualizarPedidos", pedidosFiltrados);
         }
 
         public async Task ActualizarFilaTemporal(Pedido tempPedido)
         {
-            // Verificar que se haya asignado un tipo de pedido
-            if (string.IsNullOrEmpty(tempPedido.TipoPedido))
-            {
-                Console.WriteLine("Error en ActualizarFilaTemporal: 'TipoPedido' es null o vacío.");
-                return;
-            }
+            _pedidosTemporales[tempPedido.Id] = tempPedido;
 
-            if (!string.IsNullOrEmpty(tempPedido.PedidoNombre) ||
-                !string.IsNullOrEmpty(tempPedido.Cantidad) ||
-                !string.IsNullOrEmpty(tempPedido.ClavePedido) ||
-                !string.IsNullOrEmpty(tempPedido.NumeroPedido) ||
-                !string.IsNullOrEmpty(tempPedido.Observaciones))
-            {
-                _pedidosTemporales[tempPedido.Id] = new Pedido
-                {
-                    Id = tempPedido.Id,
-                    ClavePedido = tempPedido.ClavePedido,
-                    PedidoNombre = tempPedido.PedidoNombre,
-                    Cantidad = tempPedido.Cantidad,
-                    NumeroPedido = tempPedido.NumeroPedido,
-                    Observaciones = tempPedido.Observaciones,
-                    Fecha = tempPedido.Fecha,
-                    Usuario = tempPedido.Usuario,
-                    Estatus = "Pendiente",
-                    TipoPedido = tempPedido.TipoPedido // Aseguramos que se asigne el tipo
-                };
-
-                Console.WriteLine($"📢 Pedido Temporal Actualizado: {tempPedido.Id}");
-                await Clients.Group(tempPedido.TipoPedido).SendAsync("ActualizarFilaTemporal", tempPedido);
-            }
+            // ✅ Enviar solo a los usuarios del grupo correspondiente
+            await Clients.Group(tempPedido.TipoPedido).SendAsync("ActualizarFilaTemporal", tempPedido);
         }
 
-        public async Task EliminarFilaTemporal(string idPedido)
+        public async Task EliminarFilaTemporal(string idPedido, string tipoPedido)
         {
-            Console.WriteLine($"🔴 [SERVIDOR] Solicitud recibida para eliminar fila temporal: {idPedido}");
-
-            if (_pedidosTemporales.TryGetValue(idPedido, out Pedido pedidoTemporal))
+            if (_pedidosTemporales.ContainsKey(idPedido))
             {
                 _pedidosTemporales.Remove(idPedido);
-                Console.WriteLine($"✅ [SERVIDOR] Fila eliminada correctamente: {idPedido}");
-
-                // Notificar solo a los clientes en el grupo correspondiente al tipo de pedido
-                await Clients.Group(pedidoTemporal.TipoPedido).SendAsync("EliminarFilaTemporal", idPedido);
-            }
-            else
-            {
-                Console.WriteLine($"⚠️ [SERVIDOR] No se encontró la fila temporal con ID {idPedido}");
+                await Clients.Group(tipoPedido).SendAsync("EliminarFilaTemporal", idPedido);
             }
         }
 
@@ -139,26 +111,6 @@ namespace signalr.Hubs
             await Clients.All.SendAsync("MarcarPedidoEnEdicion", idPedido);
         }
 
-        public async Task UnirseGrupo(string grupo)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, grupo);
-            Console.WriteLine($"Cliente {Context.ConnectionId} se unió al grupo {grupo}");
-        }
-
-        public async Task CambiarGrupo(string nuevoGrupo)
-        {
-            // Lista de grupos posibles (ajusta según tus tipos de pedido)
-            string[] grupos = new string[] { "D1", "D2", "D3", "D4", "D5" };
-            foreach (var grupo in grupos)
-            {
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, grupo);
-            }
-            await Groups.AddToGroupAsync(Context.ConnectionId, nuevoGrupo);
-            Console.WriteLine($"Cliente {Context.ConnectionId} ahora está en el grupo {nuevoGrupo}");
-        }
-
-
-
         public class Pedido
         {
             public string Id { get; set; } = System.Guid.NewGuid().ToString();
@@ -170,7 +122,8 @@ namespace signalr.Hubs
             public string Fecha { get; set; }
             public string Usuario { get; set; }
             public string Estatus { get; set; }
-            public string TipoPedido { get; set; }  // <-- Nueva propiedad
+            public string TipoPedido { get; set; }
+
         }
 
     }
