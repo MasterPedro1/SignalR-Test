@@ -1,243 +1,282 @@
 ﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
-<title>Administración de Pedidos</title>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Administración de Pedidos</title>
 
-<div class="container py-4">
-    <!-- Título -->
-    <h2 class="mb-4">Administración de Pedidos</h2>
+    <!-- Bootstrap CSS (opcional, si ya lo tienes incluido en layout, puedes omitirlo) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
 
-    <!-- Dropdown para filtrar por tipo -->
-    <div class="mb-3">
-        <label for="filtroTipo" class="form-label">Filtrar por Tipo de Pedido:</label>
-        <select id="filtroTipo" class="form-select" onchange="filtrarPedidos();">
-            <option value="todos">Todos</option>
-            <option value="D1">D1 - Unidades inmovilizadas</option>
-            <option value="D2">D2 - Pedidos emergentes</option>
-            <option value="D3">D3 - Carga libre</option>
-            <option value="D4">D4 - Material peligroso</option>
-            <option value="D5">D5 - Stock y piezas de colisión</option>
-        </select>
-    </div>
+    <!-- Estilos opcionales -->
+    <style>
+        /* Colores personalizados */
+        .bg-purple-custom {
+            background-color: #6f42c1 !important;
+            color: white !important;
+        }
 
-    <!-- Tabla de pedidos -->
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <table class="table table-bordered text-center" id="tablaPedidosAdmin">
-                <!-- El encabezado cambiará de color según el filtro -->
-                <thead id="tablaPedidosAdminHead">
-                    <tr id="tablaHeadRow">
-                        <th>N°</th>
-                        <th>Clave</th>
-                        <th>Pedido</th>
-                        <th>Cantidad</th>
-                        <th>Número Pedido</th>
-                        <th>Observaciones</th>
-                        <th>Fecha</th>
-                        <th>Usuario</th>
-                        <th>Estatus</th>
-                        <th>Tipo</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaPedidosAdminBody"></tbody>
-            </table>
+        .table-purple-custom {
+            background-color: #e9d7fd !important;
+        }
+        /* Asegurar bordes en la tabla */
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #dee2e6 !important;
+        }
+
+        .table {
+            border-collapse: collapse !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container py-4">
+        <!-- Título -->
+        <h2 class="mb-4">Administración de Pedidos</h2>
+
+        <!-- Filtro por tipo -->
+        <div class="mb-3">
+            <label for="filtroTipo" class="form-label">Filtrar por Tipo de Pedido:</label>
+            <select id="filtroTipo" class="form-select" onchange="filtrarPedidos()">
+                <option value="todos">Todos</option>
+                <option value="D1">D1 - Unidades inmovilizadas</option>
+                <option value="D2">D2 - Pedidos emergentes</option>
+                <option value="D3">D3 - Carga libre</option>
+                <option value="D4">D4 - Material peligroso</option>
+                <option value="D5">D5 - Stock y piezas de colisión</option>
+            </select>
+        </div>
+
+        <!-- Tabla de pedidos -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <table class="table table-bordered text-center" id="tablaPedidosAdmin">
+                    <thead>
+                        <tr id="tablaHeadRow" class="table-light">
+                            <th>N°</th>
+                            <th>Clave</th>
+                            <th>Pedido</th>
+                            <th>Cantidad</th>
+                            <th>Número Pedido</th>
+                            <th>Observaciones</th>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Estatus</th>
+                            <th>Tipo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaPedidosAdminBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Bootstrap Bundle JS y SignalR (única inclusión de cada uno) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <!-- Bootstrap Bundle JS y SignalR -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 
+    <script>
+        // 1) Definir la conexión
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/pedidoHub")
+            .build();
 
-<script>
-    // Crear la conexión con el hub de SignalR
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/pedidoHub")
-        .build();
+        // 2) Variables globales
+        let listaPedidos = [];
 
-    // Variable global para almacenar la lista completa de pedidos
-    let listaPedidos = [];
+        // 3) Iniciar la conexión
+        connection.start().then(async () => {
+            console.log("Conexión establecida con el Hub de Pedidos (Admin).");
 
-    // Función que actualiza la clase del <tr> del head según el filtro seleccionado
-    function actualizarColorHead() {
-        const filtro = document.getElementById("filtroTipo").value;
-        const headRow = document.getElementById("tablaHeadRow");
-        let nuevaClase = "table-light"; // Clase por defecto
+            await connection.invoke("CambiarGrupo", "D1");
+            await connection.invoke("CambiarGrupo", "D2");
+            await connection.invoke("CambiarGrupo", "D3");
+            await connection.invoke("CambiarGrupo", "D4");
+            await connection.invoke("CambiarGrupo", "D5");
 
-        if (filtro !== "todos") {
-            switch (filtro) {
-                case "D1": nuevaClase = "bg-danger text-white"; break;
-                case "D2": nuevaClase = "bg-warning text-dark"; break;
-                case "D3": nuevaClase = "bg-success text-white"; break;
-                case "D4": nuevaClase = "bg-purple-custom"; break;
-                case "D5": nuevaClase = "bg-primary text-white"; break;
-            }
-        }
-        headRow.className = nuevaClase;
-    }
+            // Llamar al método para obtener todos los pedidos al inicio
+            const pedidos = await connection.invoke("ObtenerTodosLosPedidos");
+            listaPedidos = (pedidos || []).reverse();
+            renderPedidosAdmin();
 
-    // Función para renderizar la tabla según el filtro seleccionado
-    function renderPedidosAdmin() {
-        const filtro = document.getElementById("filtroTipo").value;
-        const tbody = document.getElementById("tablaPedidosAdminBody");
-        tbody.innerHTML = ""; // Limpiar el cuerpo de la tabla
+        }).catch(err => console.error("Error al conectar con SignalR:", err));
 
-        let pedidosFiltrados = filtro === "todos" ? listaPedidos : listaPedidos.filter(p => p.tipoPedido === filtro);
+        //-------------------------------------------------------
+        //           MANEJO DE EVENTOS EN TIEMPO REAL
+        //-------------------------------------------------------
 
-        pedidosFiltrados.forEach((pedido, index) => {
-            const tr = document.createElement("tr");
-            tr.id = pedido.id;
-
-            let claseFila = "";
-            switch (pedido.tipoPedido) {
-                case "D1": claseFila = "table-danger"; break;
-                case "D2": claseFila = "table-warning"; break;
-                case "D3": claseFila = "table-success"; break;
-                case "D4": claseFila = "table-purple-custom"; break;
-                case "D5": claseFila = "table-primary"; break;
-            }
-            tr.className = claseFila;
-
-            tr.innerHTML = `
-                <td class="p-2">${index + 1}</td>
-                <td class="p-2">${pedido.clavePedido || ""}</td>
-                <td class="p-2">${pedido.pedidoNombre}</td>
-                <td class="p-2">${pedido.cantidad}</td>
-                <td class="p-2">${pedido.numeroPedido || ""}</td>
-                <td class="p-2">${pedido.observaciones || ""}</td>
-                <td class="p-2">${pedido.fecha}</td>
-                <td class="p-2">${pedido.usuario}</td>
-                <td class="p-2 text-warning">${pedido.estatus}</td>
-                <td class="p-2">${pedido.tipoPedido || ""}</td>
-                <td class="p-2">
-                    <button class="btn btn-warning btn-sm me-1" onclick="editarPedido('${pedido.id}')">Editar</button>
-                    <button class="btn btn-danger btn-sm" onclick="eliminarPedido('${pedido.id}')">Eliminar</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
+        // Al recibir la lista completa de pedidos
+        connection.on("ActualizarPedidos", (pedidos) => {
+            console.log("ActualizarPedidos => se recibió la lista completa.");
+            listaPedidos = (pedidos || []).reverse();
+            renderPedidosAdmin();
         });
-    }
 
-    // Función para filtrar los pedidos y actualizar la tabla (incluye actualización del color del head)
-    function filtrarPedidos() {
-        actualizarColorHead();
-        renderPedidosAdmin();
-    }
+        // Escuchar los pedidos confirmados en tiempo real
+        connection.on("PedidoConfirmado", (nuevoPedido) => {
+            listaPedidos.unshift(nuevoPedido);
+            renderPedidosAdmin();
+        });
 
-    // Iniciar la conexión y obtener la lista de pedidos (se llama una única vez)
-    connection.start().then(() => {
-        console.log("Conectado a SignalR (Admin)");
-        connection.invoke("ObtenerPedidos")
-            .then((pedidos) => {
-                // Asegurarse de que pedidos sea un array; en caso contrario, usar []
-                listaPedidos = (pedidos || []).reverse();
-                renderPedidosAdmin();
-            })
-            .catch(err => console.error(err.toString()));
-    }).catch(err => console.error(err.toString()));
+        // Al eliminarse un pedido
+        connection.on("PedidoEliminado", (idPedido) => {
+            console.log("PedidoEliminado => Se eliminó el pedido con ID:", idPedido);
+            // Quitar de la lista local
+            listaPedidos = listaPedidos.filter(p => p.id !== idPedido);
+            renderPedidosAdmin();
+        });
 
-    // Escuchar actualizaciones de pedidos en tiempo real
-    connection.on("ActualizarPedidos", (pedidos) => {
-        listaPedidos = (pedidos || []).reverse();
-        renderPedidosAdmin();
-    });
+        //-------------------------------------------------------
+        //         FUNCIONES PARA RENDERIZAR Y FILTRAR
+        //-------------------------------------------------------
 
-    // También, si se confirma un nuevo pedido, se actualiza la lista
-    connection.on("PedidoConfirmado", (nuevoPedido) => {
-        // Insertar el nuevo pedido al inicio del array
-        listaPedidos.unshift(nuevoPedido);
-        renderPedidosAdmin();
-    });
-
-
-
-    // Función para eliminar un pedido
-    function eliminarPedido(idPedido) {
-        connection.invoke("EliminarPedidoAdmin", idPedido)
-            .catch(err => console.error(err.toString()));
-    }
-
-    function editarPedido(idPedido) {
-        const tr = document.getElementById(idPedido);
-        if (!tr) return;
-
-        // Extraer valores actuales (según el orden de columnas)
-        const clave = tr.children[1].textContent;
-        const pedidoNombre = tr.children[2].textContent;
-        const cantidad = tr.children[3].textContent;
-        const numeroPedido = tr.children[4].textContent;
-        const observaciones = tr.children[5].textContent;
-
-        // Convertir celdas en inputs
-        tr.children[1].innerHTML = `<input type="text" id="editClave_${idPedido}" value="${clave}" class="form-control form-control-sm">`;
-        tr.children[2].innerHTML = `<input type="text" id="editPedido_${idPedido}" value="${pedidoNombre}" class="form-control form-control-sm">`;
-        tr.children[3].innerHTML = `<input type="number" id="editCantidad_${idPedido}" value="${cantidad}" class="form-control form-control-sm">`;
-        tr.children[4].innerHTML = `<input type="text" id="editNumeroPedido_${idPedido}" value="${numeroPedido}" class="form-control form-control-sm">`;
-        tr.children[5].innerHTML = `<input type="text" id="editObservaciones_${idPedido}" value="${observaciones}" class="form-control form-control-sm">`;
-
-        // Cambiar botones de acción por "Actualizar" y "Cancelar"
-        tr.children[10].innerHTML = `
-            <button class="btn btn-primary btn-sm me-1" onclick="actualizarPedido('${idPedido}')">Actualizar</button>
-            <button class="btn btn-secondary btn-sm" onclick="filtrarPedidos()">Cancelar</button>
-        `;
-    }
-
-    function actualizarPedido(idPedido) {
-        const nuevoClave = document.getElementById(`editClave_${idPedido}`).value.trim();
-        const nuevoPedido = document.getElementById(`editPedido_${idPedido}`).value.trim();
-        const nuevaCantidad = document.getElementById(`editCantidad_${idPedido}`).value.trim();
-        const nuevoNumeroPedido = document.getElementById(`editNumeroPedido_${idPedido}`).value.trim();
-        const nuevasObservaciones = document.getElementById(`editObservaciones_${idPedido}`).value.trim();
-        const fecha = new Date().toISOString().split('T')[0];
-
-        // Validar campos obligatorios (ej. nombre del pedido y cantidad)
-        if (!nuevoPedido || !nuevaCantidad) {
-            alert("Todos los campos obligatorios deben completarse");
-            return;
+        // Filtrar por tipo y renderizar
+        function filtrarPedidos() {
+            actualizarColorHead();
+            renderPedidosAdmin();
         }
 
-        // Armar objeto con los datos actualizados
-        const pedidoActualizado = {
-            id: idPedido,
-            clavePedido: nuevoClave,
-            pedidoNombre: nuevoPedido,
-            cantidad: nuevaCantidad,
-            numeroPedido: nuevoNumeroPedido,
-            observaciones: nuevasObservaciones,
-            fecha: fecha
-        };
+        // Actualiza la clase de la fila de encabezado según el filtro
+        function actualizarColorHead() {
+            const filtro = document.getElementById("filtroTipo").value;
+            const headRow = document.getElementById("tablaHeadRow");
 
-        // Invocar el método del servidor para actualizar
-        connection.invoke("ActualizarPedido", pedidoActualizado)
-            .catch(err => console.error(err.toString()));
-    }
+            let nuevaClase = "table-light";
+            if (filtro !== "todos") {
+                switch (filtro) {
+                    case "D1": nuevaClase = "bg-danger text-white"; break;
+                    case "D2": nuevaClase = "bg-warning text-dark"; break;
+                    case "D3": nuevaClase = "bg-success text-white"; break;
+                    case "D4": nuevaClase = "bg-purple-custom"; break;
+                    case "D5": nuevaClase = "bg-primary text-white"; break;
+                }
+            }
+            headRow.className = nuevaClase;
+        }
 
+        // Renderiza la tabla completa
+        function renderPedidosAdmin() {
+            const filtro = document.getElementById("filtroTipo").value;
+            const tbody = document.getElementById("tablaPedidosAdminBody");
+            tbody.innerHTML = ""; // Limpia la tabla
 
-</script>
+            // Aplica el filtro en el cliente
+            const pedidosFiltrados = (filtro === "todos")
+                ? listaPedidos
+                : listaPedidos.filter(p => p.tipoPedido === filtro);
 
-<style>
-    .bg-purple-custom {
-        background-color: #6f42c1 !important;
-        color: white !important;
-    }
+            pedidosFiltrados.forEach((pedido, index) => {
+                const tr = document.createElement("tr");
+                tr.id = pedido.id;
 
-    
-    /* Asegurar que todas las celdas de la tabla tengan bordes */
-    .table-bordered th,
-    .table-bordered td {
-        border: 1px solid #dee2e6 !important;
-    }
+                // Color de la fila según el tipo de pedido
+                let claseFila = "";
+                switch (pedido.tipoPedido) {
+                    case "D1": claseFila = "table-danger"; break;
+                    case "D2": claseFila = "table-warning"; break;
+                    case "D3": claseFila = "table-success"; break;
+                    case "D4": claseFila = "table-purple-custom"; break;
+                    case "D5": claseFila = "table-primary"; break;
+                }
+                tr.className = claseFila;
 
-    /* Mantener el colapso de los bordes de la tabla */
-    .table {
-        border-collapse: collapse !important;
-    }
+                // Muestra el número secuencial del servidor o un guion
+                const numeroSec = pedido.numeroSecuencial ? pedido.numeroSecuencial : "-";
 
-    /* Corregir la clase personalizada de D4 */
-    .table-purple-custom {
-        background-color: #e9d7fd !important; /* Color morado claro */
-        border: 1px solid #dee2e6 !important; /* Restaurar el borde */
-    }
+                tr.innerHTML = `
+                    <td class="p-2">${index + 1}</td>
+                    <td class="p-2">${pedido.clavePedido || ""}</td>
+                    <td class="p-2">${pedido.pedidoNombre || ""}</td>
+                    <td class="p-2">${pedido.cantidad || ""}</td>
+                    <td class="p-2">${pedido.numeroPedido || ""}</td>
+                    <td class="p-2">${pedido.observaciones || ""}</td>
+                    <td class="p-2">${pedido.fecha || ""}</td>
+                    <td class="p-2">${pedido.usuario || ""}</td>
+                    <td class="p-2 text-warning">${pedido.estatus || ""}</td>
+                    <td class="p-2">${pedido.tipoPedido || ""}</td>
+                    <td class="p-2">
+                        <button class="btn btn-warning btn-sm me-1" onclick="editarPedido('${pedido.id}')">Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarPedido('${pedido.id}')">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
-</style>
+        //-------------------------------------------------------
+        //    FUNCIONES PARA EDITAR Y ELIMINAR PEDIDOS
+        //-------------------------------------------------------
+
+        // Eliminar pedido (Admin)
+        function eliminarPedido(idPedido) {
+            // Llama al método EliminarPedidoAdmin en el servidor
+            connection.invoke("EliminarPedidoAdmin", idPedido)
+                .catch(err => console.error("Error al invocar EliminarPedidoAdmin:", err));
+        }
+
+        // Inicia la edición de un pedido (conversión de celdas a inputs)
+        function editarPedido(idPedido) {
+            const tr = document.getElementById(idPedido);
+            if (!tr) return;
+
+            // Extraer valores actuales de la fila
+            const clave = tr.children[1].textContent;
+            const pedidoNombre = tr.children[2].textContent;
+            const cantidad = tr.children[3].textContent;
+            const numeroPedido = tr.children[4].textContent;
+            const observaciones = tr.children[5].textContent;
+
+            // Convertir celdas en inputs
+            tr.children[1].innerHTML = `<input type="text" id="editClave_${idPedido}" value="${clave}" class="form-control form-control-sm">`;
+            tr.children[2].innerHTML = `<input type="text" id="editPedido_${idPedido}" value="${pedidoNombre}" class="form-control form-control-sm">`;
+            tr.children[3].innerHTML = `<input type="number" id="editCantidad_${idPedido}" value="${cantidad}" class="form-control form-control-sm">`;
+            tr.children[4].innerHTML = `<input type="text" id="editNumeroPedido_${idPedido}" value="${numeroPedido}" class="form-control form-control-sm">`;
+            tr.children[5].innerHTML = `<input type="text" id="editObservaciones_${idPedido}" value="${observaciones}" class="form-control form-control-sm">`;
+
+            // Botones de acción => "Actualizar" y "Cancelar"
+            tr.children[10].innerHTML = `
+                <button class="btn btn-primary btn-sm me-1" onclick="actualizarPedido('${idPedido}')">Actualizar</button>
+                <button class="btn btn-secondary btn-sm" onclick="renderPedidosAdmin()">Cancelar</button>
+            `;
+        }
+
+        // Envía los cambios de edición al servidor
+        function actualizarPedido(idPedido) {
+            const clavePedido = document.getElementById(`editClave_${idPedido}`).value.trim();
+            const pedidoNombre = document.getElementById(`editPedido_${idPedido}`).value.trim();
+            const cantidad = document.getElementById(`editCantidad_${idPedido}`).value.trim();
+            const numeroPedido = document.getElementById(`editNumeroPedido_${idPedido}`).value.trim();
+            const observaciones = document.getElementById(`editObservaciones_${idPedido}`).value.trim();
+            const fecha = new Date().toISOString().split("T")[0];
+
+            // Validar algunos campos obligatorios, si aplica
+            if (!pedidoNombre || !cantidad) {
+                alert("Los campos de Pedido y Cantidad son obligatorios.");
+                return;
+            }
+
+            // Construir el objeto para enviar al servidor
+            const pedidoActualizado = {
+                id: idPedido,
+                clavePedido: clavePedido,
+                pedidoNombre: pedidoNombre,
+                cantidad: cantidad,
+                numeroPedido: numeroPedido,
+                observaciones: observaciones,
+                fecha: fecha
+            };
+
+            // Llamar a ActualizarPedido en el servidor
+            connection.invoke("ActualizarPedido", pedidoActualizado)
+                .catch(err => console.error("Error al actualizar pedido:", err));
+        }
+
+    </script>
+
+</body>
+</html>

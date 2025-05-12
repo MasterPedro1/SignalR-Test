@@ -1,0 +1,1024 @@
+﻿@page
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Afluencia Agente por Fuente - 2 Pestañas</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+    <style>
+
+        /* Agregar al final de la sección <style> */
+        .table-info td {
+            background-color: #e7f5ff !important;
+            font-weight: 600;
+        }
+
+        .table-light td {
+            background-color: #f8f9fa !important;
+            font-style: italic;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid #dee2e6;
+        }
+
+            .nav-tabs .nav-link {
+                font-weight: 500;
+                border: none;
+                color: #6c757d;
+                padding: 0.75rem 1.5rem;
+            }
+
+                .nav-tabs .nav-link.active {
+                    color: #007bff;
+                    background-color: transparent;
+                    border-bottom: 3px solid #007bff;
+                    font-weight: 600;
+                }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table-sm {
+            font-size: 0.8rem;
+        }
+
+            .table-sm td, .table-sm th {
+                padding: 0.3rem;
+                vertical-align: middle;
+            }
+
+        .table thead th {
+            border-bottom-width: 1px;
+            font-weight: 600;
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        .btn-header {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.3rem;
+            margin-left: 0.15rem;
+        }
+
+        .dropdown-toggle::after {
+            margin-left: 0.5em;
+        }
+
+        /* Estilos mejorados para modales */
+        .modal-dialog.modal-lg {
+            max-width: 1200px;
+            margin: 1.75rem auto;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 1rem 1.5rem;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #343a40;
+        }
+
+        .modal-body {
+            padding: 1rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
+            padding: 0.75rem 1.5rem;
+            background-color: #f8f9fa;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        /* Estilos para tablas dentro de modales */
+        .modal-table-container {
+            padding: 0.5rem;
+            background-color: #fff;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .table-detail {
+            margin-bottom: 0;
+            width: 100%;
+            font-size: 0.75rem;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .table-detail th {
+                background-color: #f1f3f5;
+                position: sticky;
+                top: 0;
+                padding: 0.5rem;
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            .table-detail td {
+                white-space: nowrap;
+                padding: 0.4rem;
+                border-top: 1px solid #e9ecef;
+            }
+
+            .table-detail tr:hover td {
+                background-color: #f8f9fa;
+            }
+
+            /* Nuevo estilo para igualar el ancho de columnas y permitir el wrap de texto */
+            .table-detail th,
+            .table-detail td {
+                white-space: normal;
+                word-break: break-word;
+                max-width: 180px;
+            }
+
+        /* Paginación */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+            border-top: 1px solid #dee2e6;
+            background-color: white;
+            margin-top: 1rem;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .page-link {
+            color: #007bff;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+
+        /* Scrollbar personalizado */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+            .modal-body::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+    </style>
+
+</head>
+
+<body>
+    <div class="container py-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5 mb-0 text-center"><i class="fas fa-chart-line mr-2"></i>Afluencia Agente por Fuente</h2>
+            </div>
+            <div class="card-body">
+                <!-- Nav Tabs -->
+                <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="tabVendedores-tab" data-toggle="tab" href="#tabVendedores" role="tab">
+                            <i class="fas fa-users mr-1"></i> Por Vendedor
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tabTipos-tab" data-toggle="tab" href="#tabTipos" role="tab">
+                            <i class="fas fa-car mr-1"></i> Por Tipo de Coche
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="myTabContent">
+                    <!-- TAB 1: Vendedores -->
+                    <div class="tab-pane fade show active" id="tabVendedores" role="tabpanel">
+                        <!-- Filtros -->
+                        <div class="row mb-3">
+                            <div class="col-md-4 mb-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center" type="button" id="marcaDropdown" data-toggle="dropdown">
+                                        <span><i class="fas fa-tag mr-2"></i>Selecciona Marca</span>
+                                    </button>
+                                    <div class="dropdown-menu w-100" id="marcaDropdownMenu"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center" type="button" id="sucursalDropdown" data-toggle="dropdown">
+                                        <span><i class="fas fa-store mr-2"></i>Selecciona Sucursal</span>
+                                    </button>
+                                    <div class="dropdown-menu w-100" id="sucursalDropdownMenu"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    </div>
+                                    <input type="date" class="form-control" id="periodoFiltroVendedores" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla Principal -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover" id="afluenciaTableVendedores">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th class="text-left">Vendedor</th>
+                                        <th class="text-center">Piso <button class="btn btn-info btn-sm btn-header" onclick="openColumnDetail('Piso','vendedor')"><i class="fas fa-search-plus"></i></button></th>
+                                        <th class="text-center">Digital <button class="btn btn-info btn-sm btn-header" onclick="openColumnDetail('Digital','vendedor')"><i class="fas fa-search-plus"></i></button></th>
+                                        <th class="text-center">Calle <button class="btn btn-info btn-sm btn-header" onclick="openColumnDetail('Calle','vendedor')"><i class="fas fa-search-plus"></i></button></th>
+                                        <th class="text-center">Base de Datos <button class="btn btn-info btn-sm btn-header" onclick="openColumnDetail('BasedeDatos','vendedor')"><i class="fas fa-search-plus"></i></button></th>
+                                        <th class="text-center">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="afluenciaBodyVendedores"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Por Tipo de Coche -->
+                    <div class="tab-pane fade" id="tabTipos" role="tabpanel">
+                        <!-- Filtros -->
+                        <div class="row mb-3">
+                            <div class="col-md-4 mb-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center" type="button" id="carTypeDropdown" data-toggle="dropdown">
+                                        <span><i class="fas fa-car mr-2"></i>Selecciona Tipo de Coche</span>
+                                    </button>
+                                    <div class="dropdown-menu w-100" id="carTypeDropdownMenu"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center" type="button" id="sucursalDropdownCarType" data-toggle="dropdown">
+                                        <span><i class="fas fa-store mr-2"></i>Selecciona Sucursal</span>
+                                    </button>
+                                    <div class="dropdown-menu w-100" id="sucursalDropdownMenuCarType"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    </div>
+                                    <input type="date" class="form-control" id="periodoFiltroCarType" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla Principal -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover" id="afluenciaTableCarType">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th class="text-left">Modelo</th>
+                                        <th class="text-center">Piso <button class="btn btn-info btn-sm btn-header" onclick="openColumnDetail('Piso','carType')"><i class="fas fa-search-plus"></i></button></th>
+                                        <th class="text-center">Digital <button class="btn btn-info btn-sm btn-header" onclick="openColumnDetail('Digital','carType')"><i class="fas fa-search-plus"></i></button></th>
+                                        <th class="text-center">Calle <button class="btn btn-info btn-sm btn-header" onclick="openColumnDetail('Calle','carType')"><i class="fas fa-search-plus"></i></button></th>
+                                        <th class="text-center">Base de Datos <button class="btn btn-info btn-sm btn-header" onclick="openColumnDetail('BasedeDatos','carType')"><i class="fas fa-search-plus"></i></button></th>
+                                        <th class="text-center">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="afluenciaBodyCarType"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals mejorados -->
+    <div class="modal fade" id="modalColumnDetail" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalColumnDetailLabel">Detalle</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-table-container" id="columnDetailBody">
+                        <!-- Aquí se inyecta la tabla de subdivisiones -->
+                    </div>
+                </div>
+               
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalSubSubDetail" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalSubSubDetailLabel">Sub-Detalle</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-table-container" id="subSubDetailBody">
+                        <!-- Aquí se inyecta la tabla de sub-subdivisiones -->
+                    </div>
+                </div>
+               
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // -------------------------------------------------------------------------
+        // ESTRUCTURA DE SUBDIVISIONES (misma para ambas pestañas)
+        // -------------------------------------------------------------------------
+        var columnHierarchy = {
+          Piso: {
+            "Referenciado": 0,
+            "Publicidad": {
+              "Espectacular": 0,
+              "Material Impreso": 0,
+              "Redes sociales": 0,
+              "Página web": 0,
+              "Radio": 0,
+              "Periódico": 0,
+              "Activaciones": 0
+            },
+            "Ubicación": 0,
+            "Cartera": 0
+          },
+          Digital: {
+            "Página Web de Planta": 0,
+            "Página Web del Distribuidor": 0,
+            "Facebook": 0,
+            "Whatsapp": 0,
+            "Línea WEB": 0,
+            "Instagram": 0,
+            "CHAT GB NUEVOS GUBAGOO": 0,
+            "Landing Page REWEB": 0,
+            "Mercado Libre OKM": 0,
+            "CHAT GB SEMINUEVOS GUBAGOO": 0,
+            "Distribuidores Toyota": 0,
+            "Teléfono Agencia": 0
+          },
+          Calle: {
+            "Activación": {
+              "Walmart": 0,
+              "Día de Muertos": 0,
+              "Sentra 2024": 0
+            },
+            "Fuerza Móvil": 0,
+            "Prospección": {
+              "Cartera": 0
+            }
+          },
+          BasedeDatos: {
+            "Servicio": 0,
+            "Estrategias BDC": {
+              "Financiera de Marca": 0,
+              "Recompra": 0,
+              "Mailing": 0
+            },
+            "Consulta BDD Propia": 0
+          }
+        };
+
+        // -------------------------------------------------------------------------
+        // 1) LÓGICA PARA PESTAÑA "POR VENDEDOR"
+        // -------------------------------------------------------------------------
+        var NUM_VENDEDORES = 8;
+        var vendorData = {}; // vendorData["Vendedor 1"][col]["1.1 Referenciado"] = 5, etc.
+
+        function getRandomInt(min, max) {
+          return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function deepClone(obj) {
+          return JSON.parse(JSON.stringify(obj));
+        }
+
+        function sumHierarchy(obj) {
+          var sum = 0;
+          for (var key in obj) {
+            if (typeof obj[key] === "number") {
+              sum += obj[key];
+            } else {
+              sum += sumHierarchy(obj[key]);
+            }
+          }
+          return sum;
+        }
+
+        // Función recursiva para contar nodos finales
+        function getLeafCount(obj) {
+          var count = 0;
+          for (var key in obj) {
+            if (typeof obj[key] === "number") {
+              count++;
+            } else {
+              count += getLeafCount(obj[key]);
+            }
+          }
+          return count;
+        }
+
+        // Distribuir un total en la jerarquía
+        function distributeValue(hierarchy, total) {
+          var leaves = getLeafCount(hierarchy);
+          if (leaves === 0) return 0;
+          var assignedTotal = 0;
+
+          function assignRandom(obj) {
+            for (var key in obj) {
+              if (typeof obj[key] === "number") {
+                var portion = getRandomInt(0, total - assignedTotal);
+                obj[key] = portion;
+                assignedTotal += portion;
+              } else {
+                assignRandom(obj[key]);
+              }
+            }
+          }
+          assignRandom(hierarchy);
+          return assignedTotal;
+        }
+
+        // Generar datos para vendedores
+        function generateVendorData() {
+          for (var i = 1; i <= NUM_VENDEDORES; i++) {
+            var vendKey = "Vendedor " + i;
+            vendorData[vendKey] = {};
+            ["Piso", "Digital", "Calle", "BasedeDatos"].forEach(function(col) {
+              var cloned = deepClone(columnHierarchy[col]);
+              var totalForColumn = getRandomInt(0, 30);
+              distributeValue(cloned, totalForColumn);
+              vendorData[vendKey][col] = cloned;
+            });
+          }
+        }
+
+        // Construir tabla principal "Por Vendedor"
+        function buildMainTableVendedores() {
+          var bodyHtml = "";
+          var columnTotals = { Piso: 0, Digital: 0, Calle: 0, BasedeDatos: 0, Total: 0 };
+
+          for (var i = 1; i <= NUM_VENDEDORES; i++) {
+            var vendKey = "Vendedor " + i;
+            var sumPiso = sumHierarchy(vendorData[vendKey]["Piso"]);
+            var sumDigital = sumHierarchy(vendorData[vendKey]["Digital"]);
+            var sumCalle = sumHierarchy(vendorData[vendKey]["Calle"]);
+            var sumBD = sumHierarchy(vendorData[vendKey]["BasedeDatos"]);
+            var total = sumPiso + sumDigital + sumCalle + sumBD;
+
+            // Acumular totales por columna
+            columnTotals.Piso += sumPiso;
+            columnTotals.Digital += sumDigital;
+            columnTotals.BasedeDatos += sumBD;
+            columnTotals.Calle += sumCalle;
+            columnTotals.Total += total;
+
+            bodyHtml += `<tr>
+              <td class="text-left">${vendKey}</td>
+              <td class="text-center">${sumPiso}</td>
+              <td class="text-center">${sumDigital}</td>
+              <td class="text-center">${sumCalle}</td>
+              <td class="text-center">${sumBD}</td>
+              <td class="text-center"><strong>${total}</strong></td>
+            </tr>`;
+          }
+
+          // Fila de totales
+          bodyHtml += `<tr class="table-info">
+            <td class="text-left"><strong>Total</strong></td>
+            <td class="text-center"><strong>${columnTotals.Piso}</strong></td>
+            <td class="text-center"><strong>${columnTotals.Digital}</strong></td>
+            <td class="text-center"><strong>${columnTotals.Calle}</strong></td>
+            <td class="text-center"><strong>${columnTotals.BasedeDatos}</strong></td>
+            <td class="text-center"><strong>${columnTotals.Total}</strong></td>
+          </tr>`;
+
+          // Fila de porcentajes (solo si hay un total general mayor que cero)
+          if (columnTotals.Total > 0) {
+            bodyHtml += `<tr class="table-light">
+              <td class="text-left"><strong>Porcentaje</strong></td>
+              <td class="text-center">${((columnTotals.Piso / columnTotals.Total) * 100).toFixed(1)}%</td>
+              <td class="text-center">${((columnTotals.Digital / columnTotals.Total) * 100).toFixed(1)}%</td>
+              <td class="text-center">${((columnTotals.Calle / columnTotals.Total) * 100).toFixed(1)}%</td>
+              <td class="text-center">${((columnTotals.BasedeDatos / columnTotals.Total) * 100).toFixed(1)}%</td>
+              <td class="text-center">100%</td>
+            </tr>`;
+          }
+
+          $("#afluenciaBodyVendedores").html(bodyHtml);
+        }
+        // -------------------------------------------------------------------------
+        // 2) LÓGICA PARA PESTAÑA "POR TIPO DE COCHE"
+        // -------------------------------------------------------------------------
+        // Aquí definimos los tipos de coche y sus modelos
+        var carTypes = {
+          "Sedan": ["Corolla", "Sentra", "Versa", "Civic", "Jetta", "Camry"],
+          "SUV": ["RAV4", "CR-V", "Escape", "Rogue", "CX-5"],
+          "Deportivo": ["Mustang", "Camaro", "370Z", "Challenger"]
+        };
+
+        // Guardamos datos en un objeto global carTypeData:
+        var carTypeData = {};
+
+        // Genera datos para TODOS los modelos de TODOS los tipos
+        function generateCarTypeData() {
+          for (var type in carTypes) {
+            carTypes[type].forEach(function(modelName) {
+              // Si no existe, lo creamos
+              if (!carTypeData[modelName]) {
+                carTypeData[modelName] = {};
+              }
+              // Generar datos en Piso, Digital, Cartera, Calle
+              ["Piso", "Digital", "Calle", "BasedeDatos"].forEach(function(col) {
+                var cloned = deepClone(columnHierarchy[col]);
+                var totalForColumn = getRandomInt(0, 30);
+                distributeValue(cloned, totalForColumn);
+                carTypeData[modelName][col] = cloned;
+              });
+            });
+          }
+        }
+
+        // Construir tabla principal "Por Tipo de Coche"
+        function buildMainTableCarType() {
+          var selectedType = $("#carTypeDropdown").data("selected");
+          if (!selectedType) {
+            selectedType = Object.keys(carTypes)[0];
+            $("#carTypeDropdown").text(selectedType).data("selected", selectedType);
+          }
+
+          var modelsInType = carTypes[selectedType];
+          var bodyHtml = "";
+          var columnTotals = { Piso: 0, Digital: 0, Calle: 0, BasedeDatos: 0, Total: 0 };
+
+          modelsInType.forEach(function(modelName) {
+            var sumPiso = sumHierarchy(carTypeData[modelName]["Piso"]);
+            var sumDigital = sumHierarchy(carTypeData[modelName]["Digital"]);
+            var sumCalle = sumHierarchy(carTypeData[modelName]["Calle"]);
+            var sumBD = sumHierarchy(carTypeData[modelName]["BasedeDatos"]);
+            var total = sumPiso + sumDigital + sumCalle + sumBD;
+
+            // Acumular totales por columna
+            columnTotals.Piso += sumPiso;
+            columnTotals.Digital += sumDigital;
+            columnTotals.Calle += sumCalle;
+            columnTotals.BasedeDatos += sumBD;
+            columnTotals.Total += total;
+
+            bodyHtml += `<tr>
+              <td class="text-left">${modelName}</td>
+              <td class="text-center">${sumPiso}</td>
+              <td class="text-center">${sumDigital}</td>
+              <td class="text-center">${sumCalle}</td>
+              <td class="text-center">${sumBD}</td>
+              <td class="text-center"><strong>${total}</strong></td>
+            </tr>`;
+          });
+
+          // Fila de totales
+          bodyHtml += `<tr class="table-info">
+            <td class="text-left"><strong>Total</strong></td>
+            <td class="text-center"><strong>${columnTotals.Piso}</strong></td>
+            <td class="text-center"><strong>${columnTotals.Digital}</strong></td>
+            <td class="text-center"><strong>${columnTotals.Calle}</strong></td>
+            <td class="text-center"><strong>${columnTotals.BasedeDatos}</strong></td>
+            <td class="text-center"><strong>${columnTotals.Total}</strong></td>
+          </tr>`;
+
+          // Fila de porcentajes (solo si hay un total general mayor que cero)
+          if (columnTotals.Total > 0) {
+            bodyHtml += `<tr class="table-light">
+              <td class="text-left"><strong>Porcentaje</strong></td>
+              <td class="text-center">${((columnTotals.Piso / columnTotals.Total) * 100).toFixed(1)}%</td>
+              <td class="text-center">${((columnTotals.Digital / columnTotals.Total) * 100).toFixed(1)}%</td>
+              <td class="text-center">${((columnTotals.Calle / columnTotals.Total) * 100).toFixed(1)}%</td>
+              <td class="text-center">${((columnTotals.BasedeDatos / columnTotals.Total) * 100).toFixed(1)}%</td>
+              <td class="text-center">100%</td>
+            </tr>`;
+          }
+
+          $("#afluenciaBodyCarType").html(bodyHtml);
+        }
+
+        // -------------------------------------------------------------------------
+        // ABRIR MODAL DE DETALLE DE COLUMNA (compartido por ambas pestañas)
+        function openColumnDetail(column, tipo) {
+          $("#modalColumnDetailLabel").text("Detalle de " + column);
+
+          // Obtenemos todas las subdivisiones para la columna
+          var subdivKeys = Object.keys(columnHierarchy[column]);
+
+          // Parámetros de paginación: ahora 6 columnas por página
+          var limit = 6;
+          var totalPages = Math.ceil(subdivKeys.length / limit);
+          var currentPage = 1;
+
+          // Función que renderiza la tabla usando solo las columnas de la página actual
+          function renderTable(page) {
+            currentPage = page;
+            // Extraemos las columnas para la página actual
+            var paginatedColumns = subdivKeys.slice((page - 1) * limit, page * limit);
+            var tableHtml = `<table class="table table-detail table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th class="text-left">${tipo === "vendedor" ? "Vendedor" : "Modelo"}</th>`;
+
+            // Encabezado: renderizamos las columnas paginadas
+            paginatedColumns.forEach(function(sk) {
+              if (typeof columnHierarchy[column][sk] === "number") {
+                tableHtml += `<th class="text-center">${sk}</th>`;
+              } else {
+                tableHtml += `<th class="text-center">
+                  ${sk}
+                  <button class="btn btn-link btn-detail" onclick="openSubSubDetail('${column}','${sk}','${tipo}')">
+                    <i class="fas fa-ellipsis-h"></i>
+                  </button>
+                </th>`;
+              }
+            });
+            tableHtml += `<th class="text-center">Total</th></tr></thead><tbody>`;
+
+            // Renderizamos las filas según el tipo
+            if (tipo === "vendedor") {
+              for (var i = 1; i <= NUM_VENDEDORES; i++) {
+                var vendKey = "Vendedor " + i;
+                var rowSum = 0;
+                tableHtml += `<tr><td class="text-left">${vendKey}</td>`;
+                paginatedColumns.forEach(function(sk) {
+                  var dataObj = vendorData[vendKey][column][sk];
+                  var val = (typeof dataObj === "number") ? dataObj : sumHierarchy(dataObj);
+                  rowSum += val;
+                  tableHtml += `<td class="text-center">${val}</td>`;
+                });
+                tableHtml += `<td class="text-center"><strong>${rowSum}</strong></td></tr>`;
+              }
+              // Fila de totales
+              tableHtml += `<tr><th class="text-left">Total</th>`;
+              var colTotals = new Array(paginatedColumns.length).fill(0);
+              for (var i = 1; i <= NUM_VENDEDORES; i++) {
+                var vendKey = "Vendedor " + i;
+                paginatedColumns.forEach(function(sk, idx) {
+                  var dataObj = vendorData[vendKey][column][sk];
+                  var val = (typeof dataObj === "number") ? dataObj : sumHierarchy(dataObj);
+                  colTotals[idx] += val;
+                });
+              }
+              var grandTotal = 0;
+              colTotals.forEach(function(ct) {
+                tableHtml += `<td class="text-center"><strong>${ct}</strong></td>`;
+                grandTotal += ct;
+              });
+              tableHtml += `<td class="text-center"><strong>${grandTotal}</strong></td></tr>`;
+            } else {
+              // Para "carType"
+              var selectedType = $("#carTypeDropdown").data("selected");
+              if (!selectedType) {
+                selectedType = Object.keys(carTypes)[0];
+                $("#carTypeDropdown").text(selectedType).data("selected", selectedType);
+              }
+              var modelsInType = carTypes[selectedType];
+              modelsInType.forEach(function(modelName) {
+                var rowSum = 0;
+                tableHtml += `<tr><td class="text-left">${modelName}</td>`;
+                paginatedColumns.forEach(function(sk) {
+                  var dataObj = carTypeData[modelName][column][sk];
+                  var val = (typeof dataObj === "number") ? dataObj : sumHierarchy(dataObj);
+                  rowSum += val;
+                  tableHtml += `<td class="text-center">${val}</td>`;
+                });
+                tableHtml += `<td class="text-center"><strong>${rowSum}</strong></td></tr>`;
+              });
+              // Fila de totales
+              tableHtml += `<tr><th class="text-left">Total</th>`;
+              var colTotals = new Array(paginatedColumns.length).fill(0);
+              modelsInType.forEach(function(modelName) {
+                paginatedColumns.forEach(function(sk, idx) {
+                  var dataObj = carTypeData[modelName][column][sk];
+                  var val = (typeof dataObj === "number") ? dataObj : sumHierarchy(dataObj);
+                  colTotals[idx] += val;
+                });
+              });
+              var grandTotal = 0;
+              colTotals.forEach(function(ct) {
+                tableHtml += `<td class="text-center"><strong>${ct}</strong></td>`;
+                grandTotal += ct;
+              });
+              tableHtml += `<td class="text-center"><strong>${grandTotal}</strong></td></tr>`;
+            }
+
+            tableHtml += `</tbody></table>`;
+
+            // Agregar controles de paginación si hay más de una página
+            if (totalPages > 1) {
+              tableHtml += `<div class="pagination-container"><ul class="pagination">`;
+              if (currentPage > 1) {
+                tableHtml += `<li class="page-item"><a class="page-link" href="#" onclick="renderPage(${currentPage-1})">Anterior</a></li>`;
+              }
+              for (let p = 1; p <= totalPages; p++) {
+                if (p === currentPage) {
+                  tableHtml += `<li class="page-item active"><a class="page-link" href="#" onclick="renderPage(${p})">${p}</a></li>`;
+                } else {
+                  tableHtml += `<li class="page-item"><a class="page-link" href="#" onclick="renderPage(${p})">${p}</a></li>`;
+                }
+              }
+              if (currentPage < totalPages) {
+                tableHtml += `<li class="page-item"><a class="page-link" href="#" onclick="renderPage(${currentPage+1})">Siguiente</a></li>`;
+              }
+              tableHtml += `</ul></div>`;
+            }
+
+            $("#columnDetailBody").html(tableHtml);
+          }
+
+          // Exponemos la función renderPage globalmente para que los onclick de la paginación funcionen
+          window.renderPage = renderTable;
+
+          // Renderizamos la primera página
+          renderTable(currentPage);
+
+          $("#modalColumnDetail").modal("show");
+        }
+
+        // -------------------------------------------------------------------------
+        // ABRIR MODAL DE SUB-SUBDIVISIONES
+        // -------------------------------------------------------------------------
+        function openSubSubDetail(column, subdivKey, tipo) {
+          $("#modalColumnDetail").modal("hide"); // ocultamos el primer modal
+
+          var modalTitle = `Detalle de ${subdivKey} - ${column}`;
+          $("#modalSubSubDetailLabel").text(modalTitle);
+
+          var subSubObj = columnHierarchy[column][subdivKey];
+          var subSubKeys = Object.keys(subSubObj);
+
+          var tableHtml = `<table class="table table-detail table-bordered table-sm">
+            <thead>
+              <tr>
+                <th class="text-left">${tipo === "vendedor" ? "Vendedor" : "Modelo"}</th>`;
+          subSubKeys.forEach(function(k) {
+            tableHtml += `<th class="text-center">${k}</th>`;
+          });
+          tableHtml += `<th class="text-center">Total</th></tr></thead><tbody>`;
+
+          if (tipo === "vendedor") {
+            for (var i = 1; i <= NUM_VENDEDORES; i++) {
+              var vendKey = "Vendedor " + i;
+              var rowSum = 0;
+              tableHtml += `<tr><td class="text-left">${vendKey}</td>`;
+              subSubKeys.forEach(function(k) {
+                var val = vendorData[vendKey][column][subdivKey][k] || 0;
+                rowSum += val;
+                tableHtml += `<td class="text-center">${val}</td>`;
+              });
+              tableHtml += `<td class="text-center"><strong>${rowSum}</strong></td></tr>`;
+            }
+
+            // Fila de totales
+            tableHtml += `<tr><th class="text-left">Total</th>`;
+            var colTotals = new Array(subSubKeys.length).fill(0);
+            for (var i = 1; i <= NUM_VENDEDORES; i++) {
+              var vendKey = "Vendedor " + i;
+              subSubKeys.forEach(function(k, idx) {
+                var val = vendorData[vendKey][column][subdivKey][k] || 0;
+                colTotals[idx] += val;
+              });
+            }
+            var grandTotal = 0;
+            colTotals.forEach(function(ct) {
+              tableHtml += `<td class="text-center"><strong>${ct}</strong></td>`;
+              grandTotal += ct;
+            });
+            tableHtml += `<td class="text-center"><strong>${grandTotal}</strong></td></tr>`;
+          } else {
+            // tipo === "carType"
+            var selectedType = $("#carTypeDropdown").data("selected");
+            if (!selectedType) {
+              selectedType = Object.keys(carTypes)[0];
+              $("#carTypeDropdown").text(selectedType).data("selected", selectedType);
+            }
+            var modelsInType = carTypes[selectedType];
+
+            modelsInType.forEach(function(modelName) {
+              var rowSum = 0;
+              tableHtml += `<tr><td class="text-left">${modelName}</td>`;
+              subSubKeys.forEach(function(k) {
+                var val = carTypeData[modelName][column][subdivKey][k] || 0;
+                rowSum += val;
+                tableHtml += `<td class="text-center">${val}</td>`;
+              });
+              tableHtml += `<td class="text-center"><strong>${rowSum}</strong></td></tr>`;
+            });
+
+            // Fila de totales
+            tableHtml += `<tr><th class="text-left">Total</th>`;
+            var colTotals = new Array(subSubKeys.length).fill(0);
+            modelsInType.forEach(function(modelName) {
+              subSubKeys.forEach(function(k, idx) {
+                var val = carTypeData[modelName][column][subdivKey][k] || 0;
+                colTotals[idx] += val;
+              });
+            });
+            var grandTotal = 0;
+            colTotals.forEach(function(ct) {
+              tableHtml += `<td class="text-center"><strong>${ct}</strong></td>`;
+              grandTotal += ct;
+            });
+            tableHtml += `<td class="text-center"><strong>${grandTotal}</strong></td></tr>`;
+          }
+
+          tableHtml += `</tbody></table>`;
+          $("#subSubDetailBody").html(tableHtml);
+
+          $("#modalSubSubDetail").modal("show");
+        }
+
+        // -------------------------------------------------------------------------
+        // DROPDOWNS (Marcas, Sucursales, Tipos de Coche) y Período (Ejemplo)
+        // -------------------------------------------------------------------------
+        var marcasEjemplo = ["Toyota", "Ford", "Honda", "Chevrolet"];
+        var sucursalesEjemplo = ["Sucursal Centro", "Sucursal Norte", "Sucursal Sur"];
+
+        // Vendedores
+        function populateDropdownsVendedores() {
+          var $marcaMenu = $("#marcaDropdownMenu");
+          $marcaMenu.empty();
+          marcasEjemplo.forEach(function(m) {
+            $marcaMenu.append(
+              `<a class="dropdown-item" href="#" data-value="${m}">${m}</a>`
+            );
+          });
+
+          var $sucursalMenu = $("#sucursalDropdownMenu");
+          $sucursalMenu.empty();
+          sucursalesEjemplo.forEach(function(s) {
+            $sucursalMenu.append(
+              `<a class="dropdown-item" href="#" data-value="${s}">${s}</a>`
+            );
+          });
+        }
+
+        // Tipos de Coche
+        function populateDropdownsCarType() {
+          var $carTypeMenu = $("#carTypeDropdownMenu");
+          $carTypeMenu.empty();
+          for (var type in carTypes) {
+            $carTypeMenu.append(
+              `<a class="dropdown-item" href="#" data-value="${type}">${type}</a>`
+            );
+          }
+
+          var $sucursalMenu = $("#sucursalDropdownMenuCarType");
+          $sucursalMenu.empty();
+          sucursalesEjemplo.forEach(function(s) {
+            $sucursalMenu.append(
+              `<a class="dropdown-item" href="#" data-value="${s}">${s}</a>`
+            );
+          });
+        }
+
+        // -------------------------------------------------------------------------
+        // INIT
+        // -------------------------------------------------------------------------
+        $(document).ready(function() {
+          // Fechas por defecto
+          $("#periodoFiltroVendedores").val(new Date().toISOString().split("T")[0]);
+          $("#periodoFiltroCarType").val(new Date().toISOString().split("T")[0]);
+
+          // 1) Pestaña "Por Vendedor"
+          populateDropdownsVendedores();
+          generateVendorData();
+          buildMainTableVendedores();
+
+          // Manejo simple de dropdowns (ejemplo)
+                  // Actualiza la tabla de vendedores al cambiar el dropdown de Marca
+        $(document).on("click", "#marcaDropdownMenu a", function(e) {
+          e.preventDefault();
+          var val = $(this).data("value");
+          // Actualizamos el botón para mostrar la selección
+          $("#marcaDropdown").find('span').html(`<i class="fas fa-tag mr-2"></i>${val}`).data("selected", val);
+          console.log("Marca (Vendedor):", val);
+          generateVendorData();
+          // Actualizamos la tabla
+          buildMainTableVendedores();
+        });
+
+        // Actualiza la tabla de vendedores al cambiar el dropdown de Sucursal
+        $(document).on("click", "#sucursalDropdownMenu a", function(e) {
+          e.preventDefault();
+          var val = $(this).data("value");
+          $("#sucursalDropdown").find('span').html(`<i class="fas fa-store mr-2"></i>${val}`).data("selected", val);
+          console.log("Sucursal (Vendedor):", val);
+          generateVendorData();
+          buildMainTableVendedores();
+        });
+
+        // Actualiza la tabla de vendedores al cambiar la fecha
+        $("#periodoFiltroVendedores").on("change", function() {
+          console.log("Fecha (Vendedor):", $(this).val());
+          buildMainTableVendedores();
+        });
+
+          // 2) Pestaña "Por Tipo de Coche"
+          populateDropdownsCarType();
+          generateCarTypeData();
+          buildMainTableCarType();
+
+                  // Actualiza la tabla de tipo de coche al cambiar el dropdown de Tipo de Coche
+        $(document).on("click", "#carTypeDropdownMenu a", function(e) {
+          e.preventDefault();
+          var val = $(this).data("value");
+          $("#carTypeDropdown").find('span').html(`<i class="fas fa-car mr-2"></i>${val}`).data("selected", val);
+          console.log("Tipo de Coche seleccionado:", val);
+          generateCarTypeData();
+          buildMainTableCarType();
+        });
+
+        // Actualiza la tabla de tipo de coche al cambiar el dropdown de Sucursal
+        $(document).on("click", "#sucursalDropdownMenuCarType a", function(e) {
+          e.preventDefault();
+          var val = $(this).data("value");
+          $("#sucursalDropdownCarType").find('span').html(`<i class="fas fa-store mr-2"></i>${val}`).data("selected", val);
+          console.log("Sucursal (Tipo de Coche):", val);
+          generateCarTypeData();
+          buildMainTableCarType();
+        });
+
+        // Actualiza la tabla de tipo de coche al cambiar la fecha
+        $("#periodoFiltroCarType").on("change", function() {
+          console.log("Fecha (Tipo de Coche):", $(this).val());
+          generateCarTypeData();
+          buildMainTableCarType();
+        });
+
+
+          // Manejo del cierre de modals
+          $('.modal .close').on('click', function() {
+            $(this).closest('.modal').modal('hide');
+          });
+
+          // Al cerrar el segundo modal, reabrimos el primero
+          $("#modalSubSubDetail").on("hidden.bs.modal", function() {
+            $("#modalColumnDetail").modal("show");
+          });
+        });
+
+    </script>
+
+</body>
+
+</html>

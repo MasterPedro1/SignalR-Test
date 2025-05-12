@@ -1,0 +1,778 @@
+﻿@page
+
+<!-- Bootstrap 5 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<form method="post" action="#">
+
+    <div class="container mt-4">
+
+        <h4 class="text-center mb-3">Inspección complementaria multi-puntos</h4>
+
+        <!-- Encabezado con datos generales (form-floating en cada campo) -->
+        <div class="row g-3">
+            <!-- Cliente -->
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <!-- Placeholder con un espacio para que el label flote correctamente -->
+                    <input type="text" class="form-control" id="cliente" placeholder=" " />
+                    <label for="cliente">Cliente</label>
+                </div>
+            </div>
+
+            <!-- Año/Modelo -->
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="anoModelo" placeholder=" " />
+                    <label for="anoModelo">Año/Modelo</label>
+                </div>
+            </div>
+
+            <!-- Fecha -->
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="date" class="form-control" id="fecha" placeholder=" " />
+                    <label for="fecha">Fecha</label>
+                </div>
+            </div>
+
+            <!-- Kilometraje -->
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="kilometraje" placeholder=" " />
+                    <label for="kilometraje">Kilometraje</label>
+                </div>
+            </div>
+
+            <!-- NIV -->
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="niv" placeholder=" " />
+                    <label for="niv">No. de Identificación (NIV)</label>
+                </div>
+            </div>
+
+            <!-- Asesor de servicio -->
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="asesorServicio" placeholder=" " />
+                    <label for="asesorServicio">Asesor de servicio</label>
+                </div>
+            </div>
+
+            <!-- Orden de Reparación -->
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="ordenReparacion" placeholder=" " />
+                    <label for="ordenReparacion">Orden de Reparación</label>
+                </div>
+            </div>
+
+        </div> 
+
+        <!-- Leyenda de colores -->
+        <div class="row text-center my-3">
+            <div class="col-3">
+                <span class="estado-dot" style="background-color: green;"></span> Revisado y aprobado
+            </div>
+            <div class="col-3">
+                <span class="estado-dot" style="background-color: yellow;"></span> Podría necesitar atención futura
+            </div>
+            <div class="col-3">
+                <span class="estado-dot" style="background-color: red;"></span> Requiere atención inmediata
+            </div>
+            <div class="col-3">
+                <span class="estado-dot" style="background-color: gray;"></span> No inspeccionado
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <!-- Dos columnas para secciones -->
+        <div class="row g-3 align-items-start">
+            <div class="col-md-6 d-flex flex-column" id="columnaIzquierda"></div>
+            <div class="col-md-6 d-flex flex-column" id="columnaDerecha"></div>
+        </div>
+
+
+    </div>
+
+</form>
+
+<!-- Bootstrap 5 JS + Popper + jQuery -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+
+    // Definimos la estructura del cuestionario
+    var cuestionarioData = {
+      "columnaIzquierda": [
+        {
+          "nombre": "Interior / Exterior",
+          "preguntas": [
+            { "texto": "FUNCIONAMIENTO DEL CLAXON" },
+            { "texto": "FAROS / LUCES DE GIRO / LUCES ALTAS / LUCES DE NIEBLA" },
+            { "texto": "LIMPIAPARABRISAS IZQUIERDO" },
+            { "texto": "LIMPIAPARABRISAS DERECHO" },
+            {
+              "texto": "LUCES TRASERAS / LUCES DE FRENO / LUCES DE GIRO / LUCES DE REVERSA / LUCES EXTERIORES TRASERAS / LIMPIAPARABRISAS TRASERO"
+            },
+            { "texto": "MICROFILTRO DE CABINA" }
+          ],
+          "comentarios": true
+        },
+         {
+          "nombre": "Prueba",
+          "preguntas": [
+            { "texto": "Test1" },
+            { "texto": "Test12" },
+          ],
+          "comentarios": true
+        },
+        {
+          "nombre": "Compartimento del Motor",
+          "preguntas": [
+            { "texto": "ACEITE DE MOTOR" },
+            { "texto": "REFRIGERANTE" },
+            { "texto": "LÍQUIDO DE LA DIRECCIÓN ASISTIDA" },
+            { "texto": "LÍQUIDO DE FRENOS" },
+            { "texto": "LÍQUIDO LIMPIAPARABRISAS" },
+            { "texto": "LÍQUIDO DE LA TRANSMISIÓN AUTOMÁTICA" },
+            { "texto": "MANGUERAS DEL SISTEMA REFRIGERANTE" },
+            { "texto": "MANGUERAS Y CONEXIONES DE CALEFACCIÓN / A/C" },
+            { "texto": "NÚCLEO Y TAPA DEL RADIADOR" },
+            { "texto": "FILTRO DE AIRE DEL MOTOR" },
+            { "texto": "BANDAS DE TRANSMISIÓN" }
+          ],
+          "comentarios": true
+        },
+        {
+          "nombre": "Bajo el Vehículo",
+          "preguntas": [
+            { "texto": "SUSPENSIÓN / AMORTIGUADORES TRASEROS" },
+            { "texto": "EJE TRASERO" },
+            { "texto": "DIFERENCIAL (VERIFICACIÓN DE ESTADO Y FUGAS)" },
+            { "texto": "EJE DE TRANSMISIÓN" },
+            { "texto": "SILENCIADOR / ESCAPE / MONTAJES" },
+            { "texto": "SUSPENSIÓN / AMORTIGUADORES DELANTEROS (FUELLES / BRAZO DE DIRECCIÓN / BUJES)" },
+            { "texto": "EJES – INSPECCIÓN VISUAL DE FUGAS" },
+            { "texto": "FUGAS DE LÍQUIDO (ACEITE / TRANSMISIÓN / REFRIGERANTE)" }
+          ],
+          "comentarios": true
+        }
+
+
+      ],
+      "columnaDerecha": [
+        {
+          "nombre": "Rendimiento de la batería",
+          "preguntas": [
+            {
+              "texto": "TERMINALES DE LA BATERÍA / CABLES / MONTAJE"
+            },
+            {
+              "texto": "CONTROL DE CARGA DE LA BATERÍA (SE ADJUNTAN RESULTADOS DE LA PRUEBA)",
+              "estadosEspeciales": [
+                { "nombre": "APROBADO",            "color": "green",  "rowColor": "#8bf795" },
+                { "nombre": "RECARGAR / REVALUAR", "color": "yellow", "rowColor": "#fcff66" },
+                { "nombre": "FALLA",               "color": "red",    "rowColor": "#ffcccc" },
+                { "nombre": "NO SE INSPECCIONÓ",    "color": "gray",   "rowColor": "#dddddd" }
+              ]
+            }
+          ],
+          "comentarios": true
+        },
+        {
+          "nombre": "Neumáticos",
+          "preguntas": [
+            { "texto": "ROTACIÓN DE NEUMÁTICOS" },
+          ],
+        },
+        {
+          "nombre": "Estado de los frenos",
+          "preguntas": [
+            { "texto": "PASTILLAS DE FRENO DELANTERO IZQUIERDO" },
+            { "texto": "PASTILLAS DE FRENO TRASERO IZQUIERDO" },
+            { "texto": "PASTILLAS DE FRENO DELANTERO DERECHO" },
+            { "texto": "PASTILLAS DE FRENO TRASERO DERECHO" }
+
+          ],
+        },
+        {
+          "nombre": "Aplicación de campañas de calidad",
+          "preguntas": [
+          ],
+        },
+        {
+          "nombre": "Programación de próximo mantenimiento",
+          "preguntas": [
+          ],
+        },
+        {
+          "nombre": "Comentarios y recomendaciones",
+          "preguntas": [
+          ],
+          "comentarios": true
+        },
+      ]
+    };
+
+    // Definimos los 4 estados (círculos de color) y el color pastel de fondo
+    var estados = [
+      { nombre: "Aprobado",  color: "green",    rowColor: "#8bf795" },
+      { nombre: "Futuro",    color: "yellow",   rowColor: "#fcff66" },
+      { nombre: "Inmediato", color: "red",      rowColor: "#ffcccc" },
+      { nombre: "NoInsp",    color: "gray",     rowColor: "#dddddd" }
+    ];
+
+    // Función para generar cada SECCIÓN
+    function generarSeccion(seccion, index) {
+        let htmlSeccion = `
+          <div class="card mb-3">
+            <div class="card-header">
+              ${seccion.nombre}
+            </div>
+            <div class="card-body">
+        `;
+
+        // Detectamos si es una de las secciones especiales con 2 radio buttons
+        if (
+          seccion.nombre === "Aplicación de campañas de calidad" ||
+          seccion.nombre === "Programación de próximo mantenimiento"
+        ) {
+          htmlSeccion += generarPreguntaDobleRadio(seccion);
+        } else {
+          // Generar preguntas normales o especiales
+          seccion.preguntas.forEach(function (pregunta) {
+            htmlSeccion += generarPregunta(pregunta);
+          });
+        }
+
+        // Si la sección requiere comentarios
+        if (seccion.comentarios) {
+          let comentarioId = `comentario_${index}`;
+          htmlSeccion += `
+            <div class="mt-2">
+              <label for="${comentarioId}" class="form-label">Comentarios:</label>
+              <textarea class="form-control form-control-sm" id="${comentarioId}" rows="2"></textarea>
+            </div>
+          `;
+        }
+
+      if (seccion.nombre === "Neumáticos") {
+
+        htmlSeccion += `
+                    <div class="row mt-4">
+                      <!-- Columna Izquierda: Frontal Izquierdo y Trasero Izquierdo -->
+                      <div class="col-md-4 d-flex flex-column" style="gap: 3rem;">
+
+                        <!-- Frontal Izquierdo -->
+                        <div class="text-center mb-0">
+                          <h6>Frontal Izquierdo</h6>
+                          <div class="border p-3 rounded-3" style="background-color: #dddddd;" id="frontLeftContainer">
+                            <div class="input-group">
+                              <input type="number" class="form-control form-control-sm"
+                                     placeholder="0"
+                                     oninput="checkTreadDepth(this, 'frontLeftContainer')">
+                              <span class="input-group-text">/32</span>
+                            </div>
+                          </div>
+                          <label class="form-label mt-1 mb-0">Profundidad:</label>
+                          <div class="d-flex justify-content-center" style="gap: 3rem;">
+                            <!-- Ajusta a tu gusto (ej. max-width:100px; font-size:0.75rem) -->
+                            <div class="form-floating" style="max-width: 100px; font-size: 0.75rem;">
+                              <input type="text" class="form-control form-control-sm" id="frontLeftIn" placeholder=" ">
+                              <label for="frontLeftIn">Entrante</label>
+                            </div>
+                            <div class="form-floating" style="max-width: 100px; font-size: 0.75rem;">
+                              <input type="text" class="form-control form-control-sm" id="frontLeftOut" placeholder=" ">
+                              <label for="frontLeftOut">Saliente</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Trasero Izquierdo -->
+                        <div class="text-center mb-0">
+                          <h6>Trasero Izquierdo</h6>
+                          <div class="border p-3 rounded-3" style="background-color: #dddddd;" id="rearLeftContainer">
+                            <div class="input-group">
+                              <input type="number" class="form-control form-control-sm"
+                                     placeholder="0"
+                                     oninput="checkTreadDepth(this, 'rearLeftContainer')">
+                              <span class="input-group-text">/32</span>
+                            </div>
+                          </div>
+                          <label class="form-label mt-1 mb-0">Profundidad:</label>
+                          <div class="d-flex justify-content-center" style="gap: 3rem;">
+                            <div class="form-floating" style="max-width: 100px; font-size: 0.75rem;">
+                              <input type="text" class="form-control form-control-sm" id="rearLeftIn" placeholder=" ">
+                              <label for="rearLeftIn">Entrante</label>
+                            </div>
+                            <div class="form-floating" style="max-width: 100px; font-size: 0.75rem;">
+                              <input type="text" class="form-control form-control-sm" id="rearLeftOut" placeholder=" ">
+                              <label for="rearLeftOut">Saliente</label>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                         <!-- Columna Central: Leyenda arriba, Imagen abajo pero un poco más arriba -->
+                            <div class="col-md-4 d-flex flex-column justify-content-between align-items-center" style="min-height: 360px;">
+                                <!-- Leyenda con un margin-top grande para bajarla más -->
+                                <div class="border p-2 w-150 text-center" style="margin-top: 8rem !important;">
+                                    <h6>Profundidad del Dibujo del Neumático</h6>
+                                    <p class="m-0">
+                                        <span style="background-color: green; width: 15px; height:15px;
+                                            display:inline-block; border-radius:50%; margin-right:5px;"></span>
+                                        6/32 o más
+                                    </p>
+                                    <p class="m-0">
+                                        <span style="background-color: yellow; width: 15px; height:15px;
+                                            display:inline-block; border-radius:50%; margin-right:5px;"></span>
+                                        4/32 a 5/32
+                                    </p>
+                                    <p class="m-0">
+                                        <span style="background-color: red; width: 15px; height:15px;
+                                            display:inline-block; border-radius:50%; margin-right:5px;"></span>
+                                        3/32 o menos
+                                    </p>
+                                    <p class="m-0">
+                                        <span style="background-color: gray; width: 15px; height:15px;
+                                            display:inline-block; border-radius:50%; margin-right:5px;"></span>
+                                        No se inspeccionó
+                                    </p>
+                                </div>
+
+                                <!-- Imagen no se mueve -->
+                                <img src="/images/Llanta.png" alt="Llanta"
+                                     style="max-width: 80%; height: auto;">
+                            </div>
+
+
+                      <!-- Columna Derecha: Frontal Derecho y Trasero Derecho -->
+                      <div class="col-md-4 d-flex flex-column" style="gap: 3rem;">
+                        <!-- Frontal Derecho -->
+                        <div class="text-center mb-0">
+                          <h6>Frontal Derecho</h6>
+                          <div class="border p-3 rounded-3" style="background-color: #dddddd;" id="frontRightContainer">
+                            <div class="input-group">
+                              <input type="number" class="form-control form-control-sm"
+                                     placeholder="0"
+                                     oninput="checkTreadDepth(this, 'frontRightContainer')">
+                              <span class="input-group-text">/32</span>
+                            </div>
+                          </div>
+                          <label class="form-label mt-1 mb-0">Profundidad:</label>
+                          <div class="d-flex justify-content-center" style="gap: 3rem;">
+                            <div class="form-floating" style="max-width: 100px; font-size: 0.75rem;">
+                              <input type="text" class="form-control form-control-sm" id="frontRightIn" placeholder=" ">
+                              <label for="frontRightIn">Entrante</label>
+                            </div>
+                            <div class="form-floating" style="max-width: 100px; font-size: 0.75rem;">
+                              <input type="text" class="form-control form-control-sm" id="frontRightOut" placeholder=" ">
+                              <label for="frontRightOut">Saliente</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Trasero Derecho -->
+                        <div class="text-center mb-0">
+                          <h6>Trasero Derecho</h6>
+                          <div class="border p-3 rounded-3" style="background-color: #dddddd;" id="rearRightContainer">
+                            <div class="input-group">
+                              <input type="number" class="form-control form-control-sm"
+                                     placeholder="0"
+                                     oninput="checkTreadDepth(this, 'rearRightContainer')">
+                              <span class="input-group-text">/32</span>
+                            </div>
+                          </div>
+                          <label class="form-label mt-1 mb-0">Profundidad:</label>
+                          <div class="d-flex justify-content-center" style="gap: 3rem;">
+                            <div class="form-floating" style="max-width: 100px; font-size: 0.75rem;">
+                              <input type="text" class="form-control form-control-sm" id="rearRightIn" placeholder=" ">
+                              <label for="rearRightIn">Entrante</label>
+                            </div>
+                            <div class="form-floating" style="max-width: 100px; font-size: 0.75rem;">
+                              <input type="text" class="form-control form-control-sm" id="rearRightOut" placeholder=" ">
+                              <label for="rearRightOut">Saliente</label>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                    <div class="mt-2">
+                      <label for="" class="form-label">Comentarios:</label>
+                      <textarea class="form-control form-control-sm" id="" rows="2"></textarea>
+                   </div>
+
+        `;
+      }
+
+
+
+        htmlSeccion += `
+            </div>
+          </div>
+        `;
+      return htmlSeccion;
+    }
+
+    // Muestra el texto a la izquierda y 4 círculos de color a la derecha
+    function generarPregunta(pregunta) {
+        // Si la pregunta es sobre Estado de los Frenos, usamos la versión con input de mm
+        if (pregunta.texto.includes("PASTILLAS DE FRENO")) {
+            return generarPreguntaConInput(pregunta);
+        } else if (pregunta.estadosEspeciales && Array.isArray(pregunta.estadosEspeciales)) {
+            return generarPreguntaEspecial(pregunta);
+        } else {
+            return generarPreguntaNormal(pregunta);
+        }
+    }
+
+    // Layout normal (como ya lo tenías)
+    function generarPreguntaNormal(pregunta) {
+      let htmlPregunta = `<div class="item-row">`;
+      htmlPregunta += `<div class="item-text">${pregunta.texto}</div>`;
+      htmlPregunta += `<div>`;
+
+      // Usa los 4 estados globales (Aprobado, Futuro, Inmediato, NoInsp)
+      estados.forEach(function(estado, idx) {
+        let circleId = (pregunta.texto.replace(/\s+/g, '_') + "_" + estado.nombre + "_" + idx).toLowerCase();
+        htmlPregunta += `
+          <span
+            class="circle-choice"
+            id="${circleId}"
+            style="background-color:${estado.color};"
+            data-rowcolor="${estado.rowColor}"
+            onclick="seleccionarCirculo(this)">
+          </span>
+        `;
+      });
+
+      htmlPregunta += `</div></div>`;
+      return htmlPregunta;
+    }
+
+    // Layout especial (por ejemplo, texto arriba, opciones abajo con círculo + texto)
+    function generarPreguntaEspecial(pregunta) {
+      // Creamos un .item-row con flex-direction: column (texto arriba, opciones debajo)
+      let html = `
+        <div class="item-row d-flex flex-column" style="align-items: flex-start;">
+          <!-- Texto de la pregunta -->
+          <div class="item-text mb-2">${pregunta.texto}</div>
+
+          <!-- Opciones debajo (una sola fila con 4 círculos + texto) -->
+          <div class="d-flex flex-wrap align-items-center mb-2">
+      `;
+
+      // Dibujamos cada estadoEspecial
+      pregunta.estadosEspeciales.forEach(function(opcion, i) {
+        let circleId = (pregunta.texto.replace(/\s+/g, '_') + "_" + opcion.nombre + "_" + i).toLowerCase();
+        html += `
+          <div class="me-3 d-flex align-items-center">
+            <span
+              class="circle-choice"
+              id="${circleId}"
+              style="background-color:${opcion.color};"
+              data-rowcolor="${opcion.rowColor}"
+              onclick="seleccionarCirculo(this)">
+            </span>
+            <span class="ms-1" style="font-size:0.85rem;">${opcion.nombre}</span>
+          </div>
+        `;
+      });
+
+      html += `</div>`; // fin de d-flex de opciones
+
+      // Si esta pregunta tiene "comentarios": true, añadimos un textarea
+      if (pregunta.comentarios) {
+        let comentarioId = 'comentario_' + pregunta.texto.replace(/\s+/g, '_').toLowerCase();
+        html += `
+          <div class="mt-2">
+            <label for="${comentarioId}" class="form-label">Comentarios:</label>
+            <textarea class="form-control form-control-sm" id="${comentarioId}" rows="2"></textarea>
+          </div>
+        `;
+      }
+
+      html += `</div>`; // fin de .item-row
+      return html;
+    }
+
+    // Layout especial para preguntas con input de milímetros
+    function generarPreguntaConInput(pregunta) {
+        let htmlPregunta = `<div class="item-row d-flex align-items-center">`;
+
+        // Texto de la pregunta
+        htmlPregunta += `<div class="item-text flex-grow-1">${pregunta.texto}</div>`;
+
+        // Input para milímetros (MM)
+        htmlPregunta += `
+            <div class="input-mm">
+                <input type="number" class="form-control form-control-sm text-center"
+                       style="width: 60px;" placeholder="0">
+                <span class="ms-1">mm</span>
+            </div>
+        `;
+
+        // Contenedor de los estados de color
+        htmlPregunta += `<div>`;
+        estados.forEach(function(estado, idx) {
+            let circleId = (pregunta.texto.replace(/\s+/g, '_') + "_" + estado.nombre + "_" + idx).toLowerCase();
+            htmlPregunta += `
+                <span
+                    class="circle-choice"
+                    id="${circleId}"
+                    style="background-color:${estado.color};"
+                    data-rowcolor="${estado.rowColor}"
+                    onclick="seleccionarCirculo(this)">
+                </span>
+            `;
+        });
+        htmlPregunta += `</div></div>`; // Cerrar la fila de la pregunta
+
+        return htmlPregunta;
+    }
+
+    function generarPreguntaDobleRadio(seccion) {
+      let sectionId = seccion.nombre.replace(/\s+/g, "_");
+
+      // En lugar de imprimir seccion.nombre otra vez, dejamos solo el contenedor
+      let html = `
+        <div class="item-row d-flex align-items-center">
+          <!-- QUITAMOS esta parte: <div class="item-text flex-grow-1"><strong>${seccion.nombre}</strong></div> -->
+          <div class="d-flex align-items-center" style="gap: 15px;">
+      `;
+
+      if (seccion.nombre === "Aplicación de campañas de calidad") {
+        html += `
+          <!-- Radio Si Aplica -->
+          <div class="form-check">
+            <input class="form-check-input" type="radio"
+                   id="${sectionId}_SiAplica"
+                   name="${sectionId}_radio"
+                   value="Si Aplica" />
+            <label class="form-check-label" for="${sectionId}_SiAplica">Si Aplica</label>
+          </div>
+
+          <!-- Radio No Aplica -->
+          <div class="form-check">
+            <input class="form-check-input" type="radio"
+                   id="${sectionId}_NoAplica"
+                   name="${sectionId}_radio"
+                   value="No Aplica" />
+            <label class="form-check-label" for="${sectionId}_NoAplica">No Aplica</label>
+          </div>
+
+
+          <!-- Input de Campaña siempre visible -->
+          <span class="ms-2">Campaña:</span>
+          <input type="text" class="form-control form-control-sm ms-1"
+                 style="width: 120px;" placeholder="" />
+        `;
+      } else if (seccion.nombre === "Programación de próximo mantenimiento") {
+        html += `
+          <!-- Radio Hecho -->
+          <div class="form-check">
+            <input class="form-check-input" type="radio"
+                   id="${sectionId}_Hecho"
+                   name="${sectionId}_radio"
+                   value="Hecho" />
+            <label class="form-check-label" for="${sectionId}_Hecho">Hecho</label>
+          </div>
+
+          <!-- Radio No Aplica -->
+          <div class="form-check">
+            <input class="form-check-input" type="radio"
+                   id="${sectionId}_NoAplica"
+                   name="${sectionId}_radio"
+                   value="No Aplica" />
+            <label class="form-check-label" for="${sectionId}_NoAplica">No Aplica</label>
+          </div>
+        `;
+      }
+
+      html += `
+          </div> <!-- fin d-flex -->
+        </div> <!-- fin item-row -->
+      `;
+
+      return html;
+    }
+
+    // Selecciona ese círculo y pinta la fila de un color pastel
+    function seleccionarCirculo(span) {
+        var parentRow = span.closest('.item-row');
+
+        // Si el círculo ya está seleccionado, quita la selección
+        if (span.classList.contains('selected')) {
+            span.classList.remove('selected');
+            parentRow.style.backgroundColor = '';
+            return;
+        }
+
+        // Desmarcamos los demás círculos de la fila
+        var circles = parentRow.querySelectorAll('.circle-choice');
+        circles.forEach(function(c) {
+            c.classList.remove('selected');
+        });
+
+        // Marcamos el actual y cambiamos el fondo
+        span.classList.add('selected');
+        var rowColor = span.getAttribute('data-rowcolor');
+        parentRow.style.backgroundColor = rowColor;
+    }
+
+    function checkTreadDepth(input, containerId) {
+        let val = parseInt(input.value, 10); // Convertir a número
+        let container = document.getElementById(containerId);
+
+        // Si no hay valor o es NaN, fondo gris
+        if (!val) {
+          container.style.backgroundColor = '#dddddd'; // Gris pastel
+        } else if (val >= 6) {
+          container.style.backgroundColor = '#8bf795'; // Verde pastel
+        } else if (val >= 4) {
+          container.style.backgroundColor = '#fcff66'; // Amarillo pastel
+        } else {
+          // 3 o menos
+          container.style.backgroundColor = '#ffcccc'; // Rojo pastel
+        }
+    }
+
+    // Cuando el DOM cargue, generamos las secciones en cada columna
+    document.addEventListener("DOMContentLoaded", function(){
+      let colIzq = document.getElementById("columnaIzquierda");
+      let colDer = document.getElementById("columnaDerecha");
+
+      // Llenamos la columna Izquierda
+      cuestionarioData.columnaIzquierda.forEach(function(seccion, i) {
+        colIzq.insertAdjacentHTML('beforeend', generarSeccion(seccion, i));
+      });
+
+      // Llenamos la columna Derecha
+      cuestionarioData.columnaDerecha.forEach(function(seccion, i) {
+        colDer.insertAdjacentHTML('beforeend', generarSeccion(seccion, i));
+      });
+    });
+
+</script>
+
+<style>
+    /* Contenedor principal */
+    .inspection-container {
+        max-width: 900px;
+        margin: 0 auto;
+        font-size: 0.9rem; /* Tamaño general */
+    }
+
+    /* Círculos de la leyenda (si los usas) */
+    .estado-dot {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        vertical-align: middle;
+        margin-right: 5px;
+        border: 1px solid #555;
+    }
+
+    /* Título de la sección */
+    .section-title {
+        font-weight: bold;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 1px solid #ccc;
+    }
+
+    /* Fila de pregunta (texto + círculos) */
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.3rem; /* Ajusta según sea necesario */
+        padding: 3px 10px; /* Aumenta el padding para más espacio alrededor del texto */
+        transition: background-color 0.2s ease; /* Animación suave */
+        border-radius: 5px; /* Opcional: para suavizar los bordes */
+    }
+
+
+    /* Texto de la pregunta, más pequeño y con menos interlineado */
+    .item-text {
+        flex: 1;
+        margin-right: 1rem;
+        font-size: 0.80rem; /* Ajusta el tamaño si es necesario */
+        line-height: 1.5; /* Reduce el interlineado */
+    }
+
+    /* Círculos de color (en lugar de checkboxes) */
+    .circle-choice {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-left: 5px;
+        border: 1px solid #555;
+        cursor: pointer;
+        vertical-align: middle;
+    }
+
+        .circle-choice.selected {
+            border: 1.5px solid #000; /* Borde más grueso y oscuro */
+            transform: scale(1.2); /* Aumentar ligeramente el tamaño */
+            transition: all 0.2s ease; /* Animación suave */
+        }
+
+        /* Estilos para cada color cuando está seleccionado */
+        .circle-choice[style*="green"].selected {
+            background-color: #00cc00 !important; /* Verde más fuerte */
+        }
+
+        .circle-choice[style*="yellow"].selected {
+            background-color: #ffcc00 !important; /* Amarillo más fuerte */
+        }
+
+        .circle-choice[style*="red"].selected {
+            background-color: #ff3333 !important; /* Rojo más fuerte */
+        }
+
+        .circle-choice[style*="gray"].selected {
+            background-color: #666666 !important; /* Gris más fuerte */
+        }
+
+    /* Textarea o inputs con .form-control-sm más pequeños */
+    .form-control.form-control-sm {
+        font-size: 0.8rem;
+    }
+
+    .input-mm {
+        display: flex;
+        align-items: center;
+        margin-right: 10px;
+    }
+
+    .item-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.3rem;
+        padding: 9px;
+        transition: background-color 0.2s ease;
+        border-radius: 5px;
+    }
+
+        /* Alinear los checkboxes y el input en la misma línea */
+        .item-row .form-check {
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .item-row .form-check-label {
+            margin-left: 3px;
+        }
+
+</style>

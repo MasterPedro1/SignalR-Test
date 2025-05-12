@@ -33,6 +33,8 @@ app.UseCors("CorsPolicy");
 
 app.UseAuthorization();
 
+app.MapGet("/", () => Results.Redirect("/InspeccionMultipuntos"));
+
 app.MapRazorPages();
 
 app.MapHub<Pedidos>("/pedidoHub");

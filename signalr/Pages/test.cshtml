@@ -1,0 +1,1139 @@
+﻿@page
+
+<div class="flex justify-center items-center min-h-screen">
+
+    <div class="max-w-4xl w-full">
+
+        <!-- Modal para seleccionar el tipo de pedido -->
+        <div class="modal fade" id="tipoPedidoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="tipoPedidoModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="tipoPedidoModalLabel">Selecciona el Tipo de Pedido</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <button class="btn btn-danger w-100 mb-2" onclick="seleccionarTipoPedido('D1')">D1 - Unidades inmovilizadas</button>
+                        <button class="btn btn-warning w-100 mb-2" onclick="seleccionarTipoPedido('D2')">D2 - Pedidos emergentes</button>
+                        <button class="btn btn-success w-100 mb-2" onclick="seleccionarTipoPedido('D3')">D3 - Carga libre</button>
+                        <button class="btn btn-primary w-100 mb-2" onclick="seleccionarTipoPedido('D4')">D4 - Material peligroso</button>
+                        <button class="btn btn-secondary w-100 mb-2" onclick="seleccionarTipoPedido('D5')">D5 - Stock y piezas de colisión</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de pedidos (oculta al inicio) -->
+        <div id="pedidoSection" class="d-none mt-4">
+
+            <!-- Bienvenida con el nombre del usuario -->
+            <p id="bienvenidaUsuario" style="font-size: 1.25rem; font-weight: bold; color: #000;">
+                Bienvenido, <span id="nombreUsuario"></span>
+            </p>
+
+
+            <div class="mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="h3 mb-0">Registro de Pedidos</h2>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <button onclick="abrirSeleccionTipo()" class="btn btn-outline-secondary rounded-pill px-3 py-2 shadow-sm">
+                            Cambiar Tipo de Pedido
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p id="tipoSeleccionado" class="mb-0" style="font-size: 1.5rem; color: #333;">
+                            Selecciona un tipo de pedido
+                        </p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p id="limiteHorarioTexto" class="mb-0" style="font-size: 1.25rem; color: #555;"></p>
+                        <p id="contadorFilasRestantes" class="mb-0" style="font-size: 1.25rem; color: #555;"></p>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Formulario para agregar pedido -->
+            <div class="bg-white p-4 rounded shadow mb-4">
+                <h3 class="h5 mb-3">Agregar Pedido</h3>
+                <div class="row g-2">
+                    <div class="col-sm-2">
+                        <div class="form-floating">
+                            <input type="text" id="clavePedido" class="form-control" placeholder="Clave Pedido" autocomplete="off">
+                            <label for="clavePedido">Clave Pedido</label>
+                            <div id="listaArticulosContainer" class="dropdown-menu" style="width:100%;"></div>
+
+                        </div>
+
+                    </div>
+                    <div class="col-sm-2">
+                        <div class="form-floating">
+                            <input type="text" id="pedido" class="form-control" placeholder="Nombre Pedido">
+                            <label for="pedido">Nombre Pedido</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-2">
+                        <div class="form-floating">
+                            <input type="number" id="cantidad" class="form-control" placeholder="Cantidad">
+                            <label for="cantidad">Cantidad</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-2">
+                        <div class="form-floating">
+                            <input type="text" id="numeroPedido" class="form-control" placeholder="Número Pedido">
+                            <label for="numeroPedido">Número Pedido</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-floating">
+                            <input type="text" id="observaciones" class="form-control" placeholder="Observaciones">
+                            <label for="observaciones">Observaciones</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-2" id="botonesAccion">
+                        <button onclick="agregarPedido()" class="btn btn-success w-100 h-100">Enviar Pedido</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de pedidos con color dinámico -->
+            <div class="bg-white p-4 rounded shadow">
+                <table class="table table-bordered text-center" id="tablaPedidosContainer">
+                    <thead id="tablaPedidosHead" class="table-light">
+                        <tr>
+                            <th>N°</th>
+                            <th>Clave</th>
+                            <th>Pedido</th>
+                            <th>Cantidad</th>
+                            <th>Número Pedido</th>
+                            <th>Observaciones</th>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Estatus</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaPedidos" class="text-dark"></tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- Modal de confirmación para eliminar pedido -->
+        <div class="modal fade" id="confirmarEliminarModal" tabindex="-1" aria-labelledby="confirmarEliminarModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmarEliminarModalLabel">Confirmar Eliminación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Aquí se mostrará un resumen del pedido -->
+                        <p id="resumenPedido"></p>
+                        <p>¿Estás seguro de que deseas eliminar este pedido?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+    <script src="~/lib/signalr/signalr.js"></script>
+
+
+    <script>
+           var articulos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Articulos));
+
+
+          let pedidoTemporal = null; // Guardar fila temporal
+          let idTemporal = crypto.randomUUID(); // ID único para la fila temporal
+          let pedidoEditando = null; // Guardar el pedido en edición
+          let tipoPedidoSeleccionado = "D1";
+          let claseColorSeleccionado = "table-danger";
+          let listaPedidos = []; // Array global para almacenar pedidos
+          let pedidoAEliminar = null;
+          let usuario = '@ViewBag.Usuario';
+
+                  document.getElementById("clavePedido")?.addEventListener("input", function() {
+                filtrarArticulos();
+                actualizarFilaTemporal();
+            });
+          // Detectar cambios en todos los inputs para actualizar la fila temporal en tiempo real
+          document.getElementById("pedido")?.addEventListener("input", actualizarFilaTemporal);
+          document.getElementById("cantidad")?.addEventListener("input", actualizarFilaTemporal);
+          document.getElementById("clavePedido")?.addEventListener("input", actualizarFilaTemporal);
+          document.getElementById("numeroPedido")?.addEventListener("input", actualizarFilaTemporal);
+          document.getElementById("nombreUsuario").textContent = usuario;
+          document.getElementById("observaciones")?.addEventListener("input", actualizarFilaTemporal);
+          document.getElementById("pedidoSection").classList.remove("d-none");
+
+
+
+          connection.start().then(() => {
+
+             // Solo llamar a `ObtenerPedidos` si el usuario ya seleccionó un tipo de pedido
+             if (tipoPedidoSeleccionado) {
+                 connection.invoke("ObtenerPedidos", tipoPedidoSeleccionado)
+                     .catch(err => console.error("❌ Error al obtener pedidos:", err));
+             }
+         }).catch(err => console.error("❌ Error al conectar con SignalR:", err));
+
+          // Filtrar los Articulos
+          function filtrarArticulos() {
+                let input = document.getElementById("clavePedido");
+                let filtro = input.value.toLowerCase();
+                let lista = document.getElementById("listaArticulosContainer");
+
+                // Limpiar la lista antes de actualizar
+                lista.innerHTML = "";
+
+                if (!filtro) {
+                    lista.style.display = "none";
+                    lista.classList.remove("show");
+                    return;
+                }
+
+                // Filtrar y limitar a 10 resultados
+                let resultados = articulos.filter(a => a.Articulo.toLowerCase().includes(filtro)).slice(0, 10);
+
+
+                if (resultados.length === 0) {
+                    lista.style.display = "none";
+                    lista.classList.remove("show");
+                    return;
+                }
+
+                resultados.forEach(articulo => {
+                    let item = document.createElement("a");
+                    item.classList.add("dropdown-item");
+                    item.textContent = `${articulo.Articulo} - ${articulo.Descripcion1}`;
+                    item.href = "#"; // Evita el scroll al seleccionar
+                    item.onclick = function (event) {
+                        event.preventDefault(); // Evita la recarga de la página
+                        document.getElementById("clavePedido").value = articulo.Articulo;
+                        document.getElementById("pedido").value = articulo.Descripcion1;
+                        lista.style.display = "none"; // Ocultar dropdown después de la selección
+                        lista.classList.remove("show");
+                        actualizarFilaTemporal(); // Actualiza la fila temporal inmediatamente
+                    };
+
+                    lista.appendChild(item);
+                });
+
+                // ✅ Mostrar correctamente el dropdown usando Bootstrap
+                lista.classList.add("show");
+                lista.style.display = "block";
+            }
+
+          // ✅ Ocultar la lista si se hace clic fuera del input o dropdown
+          document.addEventListener("click", function (event) {
+                let lista = document.getElementById("listaArticulosContainer");
+                let input = document.getElementById("clavePedido");
+
+                if (!input.contains(event.target) && !lista.contains(event.target)) {
+                    lista.style.display = "none";
+                    lista.classList.remove("show");
+                }
+            });
+
+          function seleccionarTipoPedido(tipo) {
+                const idTemporal = `temp-${usuario}`;
+
+                // Si existe una fila temporal pendiente, se elimina antes de cambiar de grupo
+                if (document.getElementById(idTemporal)) {
+                    console.log(`🗑 Eliminando fila temporal en todos los clientes (${idTemporal})...`);
+                    connection.invoke("EliminarFilaTemporal", idTemporal, tipoPedidoSeleccionado)
+                        .catch(err => console.error("❌ Error al eliminar fila temporal en SignalR:", err));
+                    eliminarFilaTemporalLocal(idTemporal);
+                    limpiarInputs();
+                    pedidoTemporal = null;
+                }
+
+                // Actualiza el tipo de pedido seleccionado
+                tipoPedidoSeleccionado = tipo;
+
+                // Cambiar de grupo: abandonar el grupo anterior y unirse al nuevo
+                connection.invoke("CambiarGrupo", tipoPedidoSeleccionado)
+                    .then(() => {
+                        connection.invoke("ObtenerPedidos", tipoPedidoSeleccionado)
+                            .then(() => console.log(`📢 Solicitando pedidos del grupo: ${tipoPedidoSeleccionado}`))
+                            .catch(err => console.error("❌ Error al obtener pedidos:", err));
+                    })
+                    .catch(err => console.error("❌ Error al unirse al grupo:", err));
+
+                // Ajustar colores, textos y límite de horario según el tipo seleccionado
+                let colorFuerte, colorClaro, limiteHorarioTexto;
+
+                switch (tipo) {
+                    case "D1":
+                    case "D2":
+                        colorFuerte = (tipo === "D1") ? "bg-danger text-white" : "bg-warning text-dark";
+                        colorClaro = (tipo === "D1") ? "table-danger" : "table-warning";
+                        limiteHorarioTexto = "Límite de pedidos: 1:00 PM";
+                        break;
+                    case "D3":
+                        colorFuerte = "bg-success text-white";
+                        colorClaro = "table-success";
+                        limiteHorarioTexto = "Límite de pedidos: 5:00 PM";
+                        break;
+                    case "D4":
+                        colorFuerte = "bg-primary text-white"; // 🔵 Azul fuerte
+                        colorClaro = "table-primary"; // 🔵 Azul claro
+                        limiteHorarioTexto = "Límite de pedidos: 7:00 PM";
+                        break;
+                    case "D5":
+                        colorFuerte = "bg-secondary text-white"; // ⚪ Gris fuerte
+                        colorClaro = "table-secondary"; // ⚪ Gris claro
+                        limiteHorarioTexto = "Límite de pedidos: 7:00 PM";
+                        break;
+                    default:
+                        console.error("❌ Tipo de pedido no reconocido:", tipo);
+                        return;
+                }
+
+                document.getElementById("tipoSeleccionado").innerHTML = `Tipo seleccionado: ${tipo}`;
+                document.getElementById("tablaPedidosHead").className = colorFuerte;
+                document.getElementById("tablaPedidos").className = colorClaro;
+                document.getElementById("limiteHorarioTexto").innerText = limiteHorarioTexto;
+
+                // Actualizar o mostrar el contador de filas para D1 y D2
+                if (tipo === "D1" || tipo === "D2") {
+                    document.getElementById("contadorFilasRestantes").style.display = "block";
+                    actualizarContadorFilas();
+                } else {
+                    document.getElementById("contadorFilasRestantes").style.display = "none";
+                }
+
+                // Cerrar el modal
+                let modalElement = document.getElementById("tipoPedidoModal");
+                if (modalElement) {
+                    let tipoPedidoModal = bootstrap.Modal.getInstance(modalElement);
+                    if (tipoPedidoModal) {
+                        tipoPedidoModal.hide();
+                    } else {
+                        modalElement.classList.remove("show");
+                        modalElement.style.display = "none";
+                        document.body.classList.remove("modal-open");
+                        let backdrop = document.querySelector(".modal-backdrop");
+                        if (backdrop) backdrop.remove();
+                    }
+                }
+            }
+
+            function agregarPedido() {
+                // Verificar límite de horario
+                if (!esHorarioPermitido()) {
+                    alert("El horario límite para enviar pedidos ha pasado. No se pueden realizar nuevos pedidos.");
+                    return;
+                }
+
+                // Validar el límite de filas para D1 y D2
+                if (tipoPedidoSeleccionado === "D1" || tipoPedidoSeleccionado === "D2") {
+                    const tabla = document.getElementById("tablaPedidos");
+                    const filas = tabla.querySelectorAll("tr:not([data-temp])");
+                    const limite = (tipoPedidoSeleccionado === "D1") ? 10 : 20;
+                    if (filas.length >= limite) {
+                        alert("El límite de pedidos para este tipo ha sido alcanzado.");
+                        return;
+                    }
+                }
+
+                // Obtener valores de los inputs
+                const clavePedido = document.getElementById("clavePedido").value.trim();  // para Articulo
+                const referencia = document.getElementById("pedido").value.trim();         // para Referencia
+                const cantidad = document.getElementById("cantidad").value.trim();
+                const numeroPedido = document.getElementById("numeroPedido").value.trim(); // para IDVenta
+                const observaciones = document.getElementById("observaciones").value.trim();
+
+                // Validar campos obligatorios
+                let camposFaltantes = [];
+                if (clavePedido === "") camposFaltantes.push("Clave Pedido");
+                if (referencia === "") camposFaltantes.push("Referencia");
+                if (cantidad === "") camposFaltantes.push("Cantidad");
+                if (numeroPedido === "") camposFaltantes.push("Número Pedido");
+
+                if (camposFaltantes.length > 0) {
+                    alert("Por favor complete los campos faltantes: " + camposFaltantes.join(", "));
+                    return;
+                }
+
+                // Mapear el tipo de pedido a IDTipo (por ejemplo, D1->1, D2->2, etc.)
+                const mapTipoToID = {
+                    "D1": 1,
+                    "D2": 2,
+                    "D3": 3,
+                    "D4": 4,
+                    "D5": 5
+                };
+
+                // Construir el objeto nuevoPedido conforme al modelo PedidosD.
+                // No asignamos IDDetalle (se asignará en el Hub) si no se ha confirmado.
+            const nuevoPedido = {
+                Id: crypto.randomUUID(),
+                ClavePedido: document.getElementById("clavePedido").value.trim(),
+                PedidoNombre: document.getElementById("pedido").value.trim(),
+                Cantidad: document.getElementById("cantidad").value.trim(),
+                NumeroPedido: document.getElementById("numeroPedido").value.trim(),
+                Observaciones: document.getElementById("observaciones").value.trim(),
+                Fecha: new Date().toISOString().split('T')[0],
+                Usuario: usuario,
+                Estatus: "En revisión",
+                TipoPedido: tipoPedidoSeleccionado,
+                NumeroSecuencial: null
+            };
+
+                // Primero, guardar el pedido en la base de datos vía API
+                fetch('/Refacciones/PedidosDiarios/GuardarPedidoConVerificacionRIM', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify([nuevoPedido])
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Pedido guardado en BD con éxito:', data.NuevosIDDetalles);
+                        // Ahora se envía en tiempo real vía SignalR
+                        try {
+                            connection.invoke("EnviarPedido", nuevoPedido);
+                            connection.invoke("EliminarFilaTemporal", `temp-${usuario}`, tipoPedidoSeleccionado);
+                            eliminarFilaTemporalLocal(`temp-${usuario}`);
+                        } catch (error) {
+                            console.error("Error al enviar el pedido vía SignalR:", error);
+                            alert("Error al enviar el pedido en tiempo real.");
+                        }
+                    } else {
+                        console.error('Error al guardar el pedido en BD:', data.message);
+                        alert('Error al guardar el pedido: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error en la petición de guardar el pedido:', error);
+                    alert('Error en la comunicación con el servidor al guardar el pedido.');
+                });
+
+                limpiarInputs();
+                if (tipoPedidoSeleccionado === "D1" || tipoPedidoSeleccionado === "D2") {
+                    actualizarContadorFilas();
+                }
+            }
+
+                  function abrirSeleccionTipo() {
+            let modalElement = document.getElementById("tipoPedidoModal");
+            // Restaurar el botón de cerrar para que sea clicable
+            let btnCerrarModal = modalElement.querySelector(".btn-close");
+            if (btnCerrarModal) {
+                btnCerrarModal.style.pointerEvents = "auto"; // o ""
+                btnCerrarModal.style.opacity = "1";
+            }
+            let tipoPedidoModal = new bootstrap.Modal(modalElement);
+            tipoPedidoModal.show();
+        }
+
+            function actualizarFilaTemporal() {
+                if (pedidoEditando) return; // No actualizar si se está editando un pedido
+
+                const clavePedido = document.getElementById("clavePedido").value.trim();
+                const pedidoNombre = document.getElementById("pedido").value.trim();
+                const cantidad = document.getElementById("cantidad").value.trim();
+                const numeroPedido = document.getElementById("numeroPedido").value.trim();
+                const observaciones = document.getElementById("observaciones").value.trim();
+                const fecha = new Date().toISOString().split('T')[0];
+
+                // Usamos un identificador temporal basado en el usuario
+                const idTemporal = `temp-${usuario}`;
+
+                // Si todos los campos están vacíos, eliminar la fila temporal
+                if (!clavePedido && !pedidoNombre && !cantidad && !numeroPedido && !observaciones) {
+                    connection.invoke("EliminarFilaTemporal", idTemporal, tipoPedidoSeleccionado)
+                        .catch(err => console.error("Error al eliminar fila temporal:", err));
+                    eliminarFilaTemporalLocal(idTemporal);
+                    return;
+                }
+
+                // Construir el objeto temporal usando las propiedades con mayúscula inicial
+                const tempPedido = {
+                    Id: idTemporal,
+                    ClavePedido: clavePedido || "",
+                    PedidoNombre: pedidoNombre || "",
+                    Cantidad: cantidad || "",
+                    NumeroPedido: numeroPedido || "",
+                    Observaciones: observaciones || "",
+                    Fecha: fecha,
+                    Usuario: usuario,
+                    Estatus: "Pendiente",
+                    TipoPedido: tipoPedidoSeleccionado
+                };
+
+                // Enviar la actualización al hub (el callback "ActualizarFilaTemporal" actualizará la UI)
+                connection.invoke("ActualizarFilaTemporal", tempPedido)
+                    .catch(err => console.error("Error al enviar fila temporal:", err));
+            }
+
+            function actualizarFilaTemporalLocal(tempPedido) {
+                const tabla = document.getElementById("tablaPedidos");
+                let filaExistente = document.getElementById(tempPedido.Id);
+                if (!filaExistente) {
+                    filaExistente = document.createElement("tr");
+                    // Agregamos un atributo para identificar filas temporales
+                    filaExistente.setAttribute("data-temp", "true");
+                    filaExistente.id = tempPedido.Id;
+                    filaExistente.classList.add("border-bottom", "text-muted");
+                    filaExistente.innerHTML = `
+                        <td class="p-3">-</td>
+                        <td class="p-3">${tempPedido.ClavePedido || ""}</td>
+                        <td class="p-3">${tempPedido.PedidoNombre || ""}</td>
+                        <td class="p-3">${tempPedido.Cantidad || ""}</td>
+                        <td class="p-3">${tempPedido.NumeroPedido || ""}</td>
+                        <td class="p-3">${tempPedido.Observaciones || ""}</td>
+                        <td class="p-3">${tempPedido.Fecha || ""}</td>
+                        <td class="p-3">${tempPedido.Usuario || ""}</td>
+                        <td class="p-3 text-warning">${tempPedido.Estatus || "Pendiente"}</td>
+                        <td class="p-3"></td>
+                    `;
+                    tabla.appendChild(filaExistente);
+                } else {
+                    filaExistente.children[1].textContent = tempPedido.ClavePedido || "";
+                    filaExistente.children[2].textContent = tempPedido.PedidoNombre || "";
+                    filaExistente.children[3].textContent = tempPedido.Cantidad || "";
+                    filaExistente.children[4].textContent = tempPedido.NumeroPedido || "";
+                    filaExistente.children[5].textContent = tempPedido.Observaciones || "";
+                    filaExistente.children[6].textContent = tempPedido.Fecha || "";
+                    filaExistente.children[7].textContent = tempPedido.Usuario || "";
+                    filaExistente.children[8].textContent = tempPedido.Estatus || "Pendiente";
+                }
+            }
+
+            function editarPedido(idDetalle) {
+                if (pedidoEditando) {
+                    const filaAnterior = document.getElementById(pedidoEditando);
+                    if (filaAnterior) {
+                        const btnEditarAnterior = filaAnterior.querySelector(`button[onclick="editarPedido('${pedidoEditando}')"]`);
+                        const btnEliminarAnterior = filaAnterior.querySelector(`button[onclick="mostrarConfirmacionEliminarPedido('${pedidoEditando}')"]`);
+                        if (btnEditarAnterior) {
+                            btnEditarAnterior.disabled = false;
+                            btnEditarAnterior.classList.remove("opacity-50", "cursor-not-allowed");
+                        }
+                        if (btnEliminarAnterior) {
+                            btnEliminarAnterior.disabled = false;
+                            btnEliminarAnterior.classList.remove("opacity-50", "cursor-not-allowed");
+                        }
+                        filaAnterior.classList.remove("text-muted");
+                    }
+                }
+
+                const fila = document.getElementById(idDetalle);
+                if (!fila) return;
+
+                const btnEditar = fila.querySelector(`button[onclick="editarPedido('${idDetalle}')"]`);
+                const btnEliminar = fila.querySelector(`button[onclick="mostrarConfirmacionEliminarPedido('${idDetalle}')"]`);
+                if (btnEditar) {
+                    btnEditar.disabled = true;
+                    btnEditar.classList.add("opacity-50", "cursor-not-allowed");
+                }
+                if (btnEliminar) {
+                    btnEliminar.disabled = true;
+                    btnEliminar.classList.add("opacity-50", "cursor-not-allowed");
+                }
+
+                // Extraer los datos de la fila
+                const articulo = fila.children[1].textContent;
+                const referencia = fila.children[2].textContent;
+                const cantidad = fila.children[3].textContent;
+                const idVenta = fila.children[4].textContent;
+                const observaciones = fila.children[5].textContent;
+
+                // Asignar a los inputs
+                document.getElementById("clavePedido").value = articulo;
+                document.getElementById("pedido").value = referencia;
+                document.getElementById("cantidad").value = cantidad;
+                document.getElementById("numeroPedido").value = idVenta;
+                document.getElementById("observaciones").value = observaciones;
+
+                pedidoEditando = idDetalle;
+                fila.classList.add("text-muted");
+
+                connection.invoke("MarcarPedidoEnEdicion", idDetalle).catch(err => console.error(err));
+
+                document.getElementById("botonesAccion").innerHTML = `
+                    <button onclick="actualizarPedido()" class="btn btn-primary">Actualizar</button>
+                    <button onclick="cancelarEdicion()" class="btn btn-secondary">Cancelar</button>
+                `;
+
+                document.getElementById("clavePedido").addEventListener("input", actualizarFilaEditada);
+                document.getElementById("pedido").addEventListener("input", actualizarFilaEditada);
+                document.getElementById("cantidad").addEventListener("input", actualizarFilaEditada);
+                document.getElementById("numeroPedido").addEventListener("input", actualizarFilaEditada);
+                document.getElementById("observaciones").addEventListener("input", actualizarFilaEditada);
+            }
+
+            function actualizarPedido() {
+                if (!pedidoEditando) return;
+
+                const articulo = document.getElementById("clavePedido").value.trim();
+                const referencia = document.getElementById("pedido").value.trim();
+                const cantidad = document.getElementById("cantidad").value.trim();
+                const idVenta = document.getElementById("numeroPedido").value.trim();
+                const observaciones = document.getElementById("observaciones").value.trim();
+                const fecha = new Date().toISOString().split('T')[0];
+
+                if (!articulo || !referencia || !cantidad || !idVenta) {
+                    alert("Todos los campos son obligatorios excepto observaciones.");
+                    return;
+                }
+
+                const pedidoActualizado = {
+                    // La clave para identificar el pedido es ahora IDDetalle
+                    IDDetalle: pedidoEditando,
+                    Articulo: articulo,
+                    Referencia: referencia,
+                    Cantidad: cantidad,
+                    IDVenta: idVenta,
+                    Observaciones: observaciones,
+                    Fecha: fecha,
+                    Usuario: usuario,
+                    estatus: "En Revisión"
+                };
+
+                try {
+                    connection.invoke("ActualizarPedido", pedidoActualizado);
+                } catch (error) {
+                    console.error("Error al actualizar el pedido:", error);
+                }
+
+                const fila = document.getElementById(pedidoEditando);
+                if (fila) {
+                    fila.classList.remove("text-muted");
+                    fila.children[1].textContent = articulo;
+                    fila.children[2].textContent = referencia;
+                    fila.children[3].textContent = cantidad;
+                    fila.children[4].textContent = idVenta;
+                    fila.children[5].textContent = observaciones;
+                    fila.children[6].textContent = fecha;
+                    fila.children[7].textContent = usuario;
+                    fila.children[8].textContent = "En Revisión";
+                }
+
+                const btnEditar = fila.querySelector(`button[onclick="editarPedido('${pedidoEditando}')"]`);
+                const btnEliminar = fila.querySelector(`button[onclick="mostrarConfirmacionEliminarPedido('${pedidoEditando}')"]`);
+                if (btnEditar) {
+                    btnEditar.disabled = false;
+                    btnEditar.classList.remove("opacity-50", "cursor-not-allowed");
+                }
+                if (btnEliminar) {
+                    btnEliminar.disabled = false;
+                    btnEliminar.classList.remove("opacity-50", "cursor-not-allowed");
+                }
+
+                limpiarInputs();
+                pedidoEditando = null;
+                document.getElementById("botonesAccion").innerHTML = `
+                    <button onclick="agregarPedido()" class="btn btn-success">Enviar Pedido</button>
+                `;
+            }
+
+          function cancelarEdicion() {
+                if (!pedidoEditando) return;
+
+                const fila = document.getElementById(pedidoEditando);
+                if (fila) {
+                    // Remover ambas clases que podrían haber sido agregadas para marcar la edición
+                    fila.classList.remove("text-muted", "text-secondary");
+                    // Restaurar el estatus en la columna correcta (índice 8)
+                    fila.children[8].textContent = "En Revisión";
+
+                    // Reactivar los botones de edición y eliminación
+                    const btnEditar = fila.querySelector(`button[onclick="editarPedido('${pedidoEditando}')"]`);
+                    const btnEliminar = fila.querySelector(`button[onclick="mostrarConfirmacionEliminarPedido('${pedidoEditando}')"]`);
+                    if (btnEditar) {
+                        btnEditar.disabled = false;
+                        btnEditar.classList.remove("opacity-50", "cursor-not-allowed");
+                    }
+                    if (btnEliminar) {
+                        btnEliminar.disabled = false;
+                        btnEliminar.classList.remove("opacity-50", "cursor-not-allowed");
+                    }
+                }
+
+                pedidoEditando = null;
+                limpiarInputs();
+                document.getElementById("botonesAccion").innerHTML = `
+                    <button onclick="agregarPedido()" class="btn btn-success">Enviar Pedido</button>
+                `;
+            }
+
+            function actualizarFilaEditada() {
+                if (!pedidoEditando) return;
+
+                const fila = document.getElementById(pedidoEditando);
+                if (!fila) return;
+
+                const articulo = document.getElementById("clavePedido")?.value.trim() || "...";
+                const referencia = document.getElementById("pedido")?.value.trim() || "...";
+                const cantidad = document.getElementById("cantidad")?.value.trim() || "...";
+                const idVenta = document.getElementById("numeroPedido")?.value.trim() || "...";
+                const observaciones = document.getElementById("observaciones")?.value.trim() || "...";
+
+                fila.children[1].textContent = articulo;
+                fila.children[2].textContent = referencia;
+                fila.children[3].textContent = cantidad;
+                fila.children[4].textContent = idVenta;
+                fila.children[5].textContent = observaciones;
+            }
+
+          function eliminarPedido(idPedido) {
+            try {
+                if (!tipoPedidoSeleccionado) {
+                    console.error("❌ Error: No se puede eliminar pedido porque el tipo de pedido no está definido.");
+                    return;
+                }
+                connection.invoke("EliminarPedido", usuario, idPedido, tipoPedidoSeleccionado);
+            } catch (error) {
+                console.error("Error al eliminar pedido:", error);
+            }
+        }
+
+          function eliminarFilaTemporalLocal(idTemporal) {
+            const fila = document.getElementById(idTemporal);
+            if (fila) {
+                fila.remove();
+            } else {
+                console.warn(`⚠ No se encontró la fila temporal con ID: ${idTemporal}`);
+            }
+        }
+
+          function limpiarInputs() {
+              document.getElementById("clavePedido").value = "";
+              document.getElementById("pedido").value = "";
+              document.getElementById("cantidad").value = "";
+              document.getElementById("numeroPedido").value = "";
+              document.getElementById("observaciones").value = "";
+          }
+
+          function esHorarioPermitido() {
+            let ahora = new Date();
+            let horaActual = ahora.getHours(); // Devuelve la hora en formato 24h
+            let limite;
+            switch (tipoPedidoSeleccionado) {
+                case "D1":
+                case "D2":
+                    limite = 23; // 1:00 PM
+                    break;
+                case "D3":
+                    limite = 17; // 5:00 PM
+                    break;
+                case "D4":
+                case "D5":
+                    limite = 19; // 7:00 PM
+                    break;
+                default:
+                    limite = 24; // Sin límite por defecto
+            }
+            return horaActual < limite;
+        }
+
+          // Función para actualizar la numeración de los pedidos
+          function actualizarNumeracionPedidos() {
+                let contador = 1;
+                const filas = document.querySelectorAll("#tablaPedidos tr");
+                filas.forEach((fila) => {
+                    if (!fila.id.startsWith("temp-")) { // Si es una fila definitiva
+                        fila.children[0].textContent = contador++;
+                    }
+                });
+            }
+
+          // Función para renderizar la tabla filtrando los pedidos por el tipo seleccionado
+            function renderPedidos() {
+                const tabla = document.getElementById("tablaPedidos");
+                if (!tabla) return;
+                tabla.innerHTML = "";
+
+                // Obtener la fecha actual en formato 'yyyy-mm-dd'
+                const today = new Date().toISOString().split('T')[0];
+
+                // Filtrar los pedidos de listaPedidos por tipo y fecha actual
+                listaPedidos
+                    .filter(p => p.TipoPedido === tipoPedidoSeleccionado && p.Fecha && p.Fecha.split('T')[0] === today)
+                    .forEach((pedido) => {
+                        // Determinar si el pedido pertenece al usuario actual
+                        const esPropio = usuario.trim() === pedido.Usuario.toString().trim();
+                        // Si el pedido es temporal (su Id comienza con "temp-") usamos "-" para el número de fila;
+                        // de lo contrario, usamos el NúmeroSecuencial asignado por el Hub.
+                        const numeroFila = (pedido.Id && pedido.Id.startsWith("temp-")) ? "-" : (pedido.NumeroSecuencial || "-");
+
+                        const fila = document.createElement("tr");
+                        // Usamos el campo Id del modelo Pedido como identificador de la fila
+                        fila.id = pedido.Id;
+                        fila.classList.add("border-bottom");
+
+                        fila.innerHTML = `
+                            <td class="p-3">${numeroFila}</td>
+                            <td class="p-3">${pedido.ClavePedido || "..."}</td>
+                            <td class="p-3">${pedido.PedidoNombre || "..."}</td>
+                            <td class="p-3">${pedido.Cantidad || "..."}</td>
+                            <td class="p-3">${pedido.NumeroPedido || "..."}</td>
+                            <td class="p-3">${pedido.Observaciones || "N/A"}</td>
+                            <td class="p-3">${pedido.Fecha ? pedido.Fecha.split('T')[0] : "..."}</td>
+                            <td class="p-3">${pedido.Usuario || "..."}</td>
+                            <td class="p-3 text-warning">${pedido.Estatus || "..."}</td>
+                            <td class="p-3">
+                                ${esPropio ? `
+                                    <button onclick="editarPedido('${pedido.Id}')" class="btn btn-primary btn-sm">
+                                      <i class="bi bi-pencil-fill"></i>
+                                    </button>
+                                    <button onclick="mostrarConfirmacionEliminarPedido('${pedido.Id}')" class="btn btn-danger btn-sm">
+                                      <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                ` : ""}
+                            </td>
+                        `;
+                        tabla.appendChild(fila);
+                    });
+
+                actualizarNumeracionPedidos();
+            }
+
+          function mostrarConfirmacionEliminarPedido(idPedido) {
+            pedidoAEliminar = idPedido;
+
+            // Obtener la fila correspondiente para extraer el resumen (ajusta según tus necesidades)
+            const fila = document.getElementById(idPedido);
+            if (fila) {
+                const clave = fila.children[1].textContent;
+                const pedidoNombre = fila.children[2].textContent;
+                const cantidad = fila.children[3].textContent;
+                // Armar el resumen que se mostrará en el modal
+                const resumen = `<strong>Clave:</strong> ${clave}<br>
+                                 <strong>Pedido:</strong> ${pedidoNombre}<br>
+                                 <strong>Cantidad:</strong> ${cantidad}`;
+                document.getElementById("resumenPedido").innerHTML = resumen;
+            }
+
+            // Mostrar el modal de confirmación
+            let eliminarModal = new bootstrap.Modal(document.getElementById("confirmarEliminarModal"));
+            eliminarModal.show();
+        }
+
+          // Función para confirmar la eliminación del pedido
+          function confirmarEliminar() {
+            if (pedidoAEliminar) {
+                // Llama a la función que ya tenías para eliminar el pedido (envía la señal al servidor)
+                eliminarPedido(pedidoAEliminar);
+                pedidoAEliminar = null;
+                // Oculta el modal
+                let eliminarModal = bootstrap.Modal.getInstance(document.getElementById("confirmarEliminarModal"));
+                if (eliminarModal) {
+                    eliminarModal.hide();
+                }
+            }
+        }
+
+          function actualizarContadorFilas() {
+                const contadorElem = document.getElementById("contadorFilasRestantes");
+                // Sólo se usa para D1 y D2
+                if (tipoPedidoSeleccionado !== "D1" && tipoPedidoSeleccionado !== "D2") {
+                    contadorElem.style.display = "none";
+                    return;
+                }
+                contadorElem.style.display = "block";
+
+                // Definir el límite según el tipo
+                const limite = (tipoPedidoSeleccionado === "D1") ? 10 : 20;
+                // Contar el número de filas en la tabla (consideramos el cuerpo de la tabla)
+                const tabla = document.getElementById("tablaPedidos");
+                const filas = tabla.getElementsByTagName("tr");
+                const numeroFilas = filas.length;
+                const restantes = Math.max(limite - numeroFilas, 0);
+
+                contadorElem.innerText = `Pedidos restantes: ${restantes}`;
+            }
+
+            connection.on("ActualizarFilaTemporal", (tempPedido) => {
+                try {
+                    const tabla = document.getElementById("tablaPedidos");
+                    // Buscamos la fila por tempPedido.Id (la propiedad con mayúscula "I")
+                    let filaExistente = document.getElementById(tempPedido.Id);
+                    if (!filaExistente) {
+                        filaExistente = document.createElement("tr");
+                        filaExistente.id = tempPedido.Id;
+                        filaExistente.classList.add("border-bottom", "text-muted");
+                        filaExistente.innerHTML = `
+                            <td class="p-3">-</td>
+                            <td class="p-3">${tempPedido.ClavePedido || ""}</td>
+                            <td class="p-3">${tempPedido.PedidoNombre || ""}</td>
+                            <td class="p-3">${tempPedido.Cantidad || ""}</td>
+                            <td class="p-3">${tempPedido.NumeroPedido || ""}</td>
+                            <td class="p-3">${tempPedido.Observaciones || ""}</td>
+                            <td class="p-3">${tempPedido.Fecha || ""}</td>
+                            <td class="p-3">${tempPedido.Usuario || ""}</td>
+                            <td class="p-3 text-warning">${tempPedido.Estatus || "Pendiente"}</td>
+                            <td class="p-3"></td>
+                        `;
+                        tabla.appendChild(filaExistente);
+                    } else {
+                        filaExistente.children[1].textContent = tempPedido.ClavePedido || "";
+                        filaExistente.children[2].textContent = tempPedido.PedidoNombre || "";
+                        filaExistente.children[3].textContent = tempPedido.Cantidad || "";
+                        filaExistente.children[4].textContent = tempPedido.NumeroPedido || "";
+                        filaExistente.children[5].textContent = tempPedido.Observaciones || "";
+                        filaExistente.children[6].textContent = tempPedido.Fecha || "";
+                        filaExistente.children[7].textContent = tempPedido.Usuario || "";
+                        filaExistente.children[8].textContent = tempPedido.Estatus || "Pendiente";
+                    }
+                } catch (error) {
+                    console.error("❌ Error al actualizar fila temporal:", error);
+                }
+            });
+
+          connection.on("EliminarFilasTemporales", () => {
+             document.querySelectorAll("tr[id^='temp-']").forEach(fila => fila.remove());
+         });
+
+          // Actualización de pedidos desde el servidor
+          connection.on("ActualizarPedidos", (pedidos) => {
+                try {
+                    // Guardar la lista completa de pedidos
+                    listaPedidos = pedidos;
+                    // Renderizar la tabla
+                    renderPedidos();
+                    // Una vez renderizada, actualizar la numeración
+                    actualizarNumeracionPedidos();
+                } catch (error) {
+                    console.error("❌ Error al actualizar pedidos:", error);
+                }
+            });
+
+          // Modificación en la función de eliminación
+          connection.on("PedidoEliminado", (idPedido) => {
+                try {
+                    let fila = document.getElementById(idPedido);
+                    if (fila) {
+                        fila.remove();
+                    } else {
+                        console.warn(`⚠️ No se encontró la fila con ID: ${idPedido} para eliminar.`);
+                    }
+                    // Recalcular la numeración tras la eliminación
+                    actualizarNumeracionPedidos();
+                } catch (error) {
+                    console.error("❌ Error al eliminar pedido:", error);
+                }
+            });
+
+          connection.on("MarcarPedidoEnEdicion", (idPedido) => {
+             try {
+                 const fila = document.getElementById(idPedido);
+                 if (!fila) return;
+
+                 // Aplicar estilo gris
+                 fila.classList.add("text-secondary");
+                 // Cambiar el texto de estatus a "Pendiente" (columna 8 en tu tabla)
+                 fila.children[8].textContent = "Pendiente";
+             } catch (error) {
+                 console.error("Error al marcar pedido en edición:", error);
+             }
+         });
+
+          connection.on("DesmarcarPedidoEnEdicion", (idPedido) => {
+             try {
+                 const fila = document.getElementById(idPedido);
+                 if (!fila) return;
+
+                 // Quitar el estilo gris
+                 fila.classList.remove("text-secondary");
+                 // Restaurar el estatus, por ejemplo "En Revisión"
+                 fila.children[8].textContent = "En Revisión";
+             } catch (error) {
+                 console.error("Error al desmarcar pedido en edición:", error);
+             }
+         });
+
+            connection.on("PedidoConfirmado", (pedido) => {
+                const tabla = document.getElementById("tablaPedidos");
+                if (!tabla) {
+                    console.error("❌ Tabla de pedidos no encontrada");
+                    return;
+                }
+
+                // Eliminar la fila temporal (usando el id temporal, por ejemplo "temp-{usuario}")
+                const idTemporal = `temp-${pedido.Usuario}`;
+                eliminarFilaTemporalLocal(idTemporal);
+
+                // Verificar si el pedido pertenece al usuario actual
+                const esPropio = usuario && pedido.Usuario && usuario.trim() === pedido.Usuario.toString().trim();
+
+                // Obtener el número de fila (se puede calcular con tabla.rows.length, etc.)
+                const numeroFila = tabla.rows.length + 1;
+
+                // Crear la fila final utilizando las propiedades del modelo Pedido
+                const fila = document.createElement("tr");
+                fila.id = pedido.Id; // Usamos la propiedad Id del modelo Pedido
+                fila.classList.add("border-bottom");
+
+                fila.innerHTML = `
+                    <td class="p-3">${numeroFila}</td>
+                    <td class="p-3">${pedido.ClavePedido || "..."}</td>
+                    <td class="p-3">${pedido.PedidoNombre || "..."}</td>
+                    <td class="p-3">${pedido.Cantidad || "..."}</td>
+                    <td class="p-3">${pedido.NumeroPedido || "..."}</td>
+                    <td class="p-3">${pedido.Observaciones || "N/A"}</td>
+                    <td class="p-3">${pedido.Fecha ? pedido.Fecha.split('T')[0] : "..."}</td>
+                    <td class="p-3">${pedido.Usuario || "..."}</td>
+                    <td class="p-3 text-warning">${pedido.Estatus || "..."}</td>
+                    <td class="p-3">
+                        ${esPropio ? `
+                            <button onclick="editarPedido('${pedido.Id}')" class="btn btn-primary btn-sm">
+                                <i class="bi bi-pencil-fill"></i>
+                            </button>
+                            <button onclick="mostrarConfirmacionEliminarPedido('${pedido.Id}')" class="btn btn-danger btn-sm">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        ` : ""}
+                    </td>
+                `;
+
+                tabla.appendChild(fila);
+            });
+
+          connection.on("EliminarFilaTemporal", (idTemporal) => {
+            eliminarFilaTemporalLocal(idTemporal);
+        });
+
+          connection.on("ActualizarContador", function(restantes) {
+                // Asegurarse de que se muestre solo si el tipo es D1 o D2
+                if (tipoPedidoSeleccionado === "D1" || tipoPedidoSeleccionado === "D2") {
+                    document.getElementById("contadorFilasRestantes").innerText = `Pedidos restantes: ${restantes}`;
+                }
+            });
+
+          // Detectar cuando el usuario cierra la página y eliminar la fila temporal
+          window.addEventListener("beforeunload", function () {
+              try {
+                  if (pedidoTemporal) {
+                      connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err));
+                      eliminarFilaTemporalLocal(idTemporal);
+                  }
+              } catch (error) {
+                  console.error("Error al eliminar la fila temporal antes de cerrar la página:", error);
+              }
+          });
+
+          // Detectar cuando el usuario pierde la conexión a internet y eliminar la fila temporal
+          window.addEventListener("offline", function () {
+              try {
+                  if (pedidoTemporal) {
+                      connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err));
+                      eliminarFilaTemporalLocal(idTemporal);
+                  }
+              } catch (error) {
+                  console.error("Error al eliminar la fila temporal por pérdida de conexión:", error);
+              }
+          });
+
+          // Detectar cuando la pestaña se oculta y eliminar la fila en edición
+          document.addEventListener("visibilitychange", function () {
+              if (document.hidden && pedidoTemporal) {
+                  connection.invoke("EliminarFilaTemporal", idTemporal).catch(err => console.error(err));
+                  eliminarFilaTemporalLocal(idTemporal);
+              }
+          });
+
+          connection.onclose(async () => {
+             console.warn("❌ Conexión perdida, intentando reconectar...");
+             setTimeout(() => {
+                 connection.start().then(() => {
+                     console.log("✅ Reconectado a SignalR, recuperando datos...");
+                     connection.invoke("ObtenerPedidos", tipoPedidoSeleccionado);
+                 });
+             }, 3000);
+         });
+
+          document.addEventListener("DOMContentLoaded", function() {
+                let modalElement = document.getElementById("tipoPedidoModal");
+                let tipoPedidoModal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                tipoPedidoModal.show();
+            });
+
+
+    </script>
+}
+
+
+
+<style>
+
+    /* Color morado fuerte para el encabezado */
+    .bg-purple-custom {
+        background-color: #6f42c1 !important; /* Morado Bootstrap */
+    }
+
+    /* Color morado claro para el body de la tabla */
+    .table-purple-custom {
+        background-color: #e9d7fd !important; /* Un tono morado más claro */
+    }
+
+    /* Color de fondo morado para el botón */
+    .btn-purple-custom {
+        background-color: #6f42c1 !important; /* Morado Bootstrap */
+        color: white !important; /* Texto en blanco */
+        border: none !important;
+    }
+
+        /* Efecto hover para el botón */
+        .btn-purple-custom:hover {
+            background-color: #5a32a3 !important; /* Un tono más oscuro de morado */
+        }
+
+        /* Sombra y efecto de clic */
+        .btn-purple-custom:active {
+            background-color: #4a248c !important;
+            box-shadow: inset 0px 3px 5px rgba(0, 0, 0, 0.2);
+        }
+
+    /* Contenedor para hacer la tabla responsive */
+    .table-responsive {
+        overflow-x: auto;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+
+    /* Ajustar las celdas para manejar textos largos correctamente */
+    .table td, .table th {
+        word-break: break-word;
+        max-width: 200px; /* Ajustar según el diseño */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal; /* Permitir que el texto se ajuste en varias líneas */
+    }
+
+    /* Estilo para que la tabla no se salga del contenedor */
+    .table-container {
+        overflow-x: auto;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: white;
+    }
+
+    #listaArticulosContainer a.dropdown-item {
+        white-space: normal; /* Permite que el texto se envuelva */
+        word-wrap: break-word; /* Fuerza el corte de palabras largas */
+        max-width: 100%; /* Asegura que no se salga del contenedor */
+    }
+
+</style>
