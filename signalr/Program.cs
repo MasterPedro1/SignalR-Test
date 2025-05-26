@@ -33,7 +33,7 @@ app.UseCors("CorsPolicy");
 
 app.UseAuthorization();
 
-app.MapGet("/", () => Results.Redirect("/InspeccionMultipuntos"));
+app.MapGet("/", () => Results.Redirect("/CochesTest"));
 
 app.MapRazorPages();
 

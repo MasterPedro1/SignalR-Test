@@ -1,0 +1,121 @@
+﻿@page
+
+<!-- Página Razor para Organizador de Automóviles -->
+<div class="d-flex flex-column min-vh-100">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Organizador</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Marca</a>
+                        <ul class="dropdown-menu" id="filterBrand">
+                            <li><a class="dropdown-item" data-brand="all">Todas</a></li>
+                            <li><a class="dropdown-item" data-brand="Toyota">Toyota</a></li>
+                            <li><a class="dropdown-item" data-brand="Ford">Ford</a></li>
+                            <li><a class="dropdown-item" data-brand="BMW">BMW</a></li>
+                            <li><a class="dropdown-item" data-brand="Honda">Honda</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <form class="d-flex">
+                    <input id="searchCar" class="form-control me-2" type="search" placeholder="Buscar...">
+                    <button type="button" class="btn btn-outline-light" data-bs-toggle="offcanvas" data-bs-target="#legendCanvas">Leyenda</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Métricas -->
+    <div class="container my-4">
+        <div class="row g-3">
+            <div class="col-sm-6 col-md-3"><div class="card text-white bg-info"><div class="card-body text-center"><h5>Total en espera</h5><p id="metricWaiting" class="fs-4">0</p></div></div></div>
+            <div class="col-sm-6 col-md-3"><div class="card text-dark bg-warning"><div class="card-body text-center"><h5>En taller</h5><p id="metricInShop" class="fs-4">0</p></div></div></div>
+            <div class="col-sm-6 col-md-3"><div class="card text-white bg-success"><div class="card-body text-center"><h5>Completados hoy</h5><p id="metricDone" class="fs-4">0</p></div></div></div>
+            <div class="col-sm-6 col-md-3"><div class="card text-white bg-secondary"><div class="card-body text-center"><h5>Promedio (s)</h5><p id="metricAvg" class="fs-4">0</p></div></div></div>
+        </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="container flex-grow-1">
+        <h4>En espera</h4>
+        <div id="cars" class="d-flex flex-wrap gap-3 bg-light border rounded p-3 mb-5">
+            <!-- Coches iniciales -->
+            <div id="car1" class="card car text-white position-relative" draggable="true" data-brand="Toyota" style="width:8rem; background-color:#ff5733; cursor:grab;"><div class="card-body text-center py-2">Toyota</div></div>
+            <div id="car2" class="card car text-white position-relative" draggable="true" data-brand="Ford" style="width:8rem; background-color:#007bff; cursor:grab;"><div class="card-body text-center py-2">Ford</div></div>
+            <div id="car3" class="card car text-white position-relative" draggable="true" data-brand="BMW" style="width:8rem; background-color:#343a40; cursor:grab;"><div class="card-body text-center py-2">BMW</div></div>
+            <div id="car4" class="card car text-white position-relative" draggable="true" data-brand="Honda" style="width:8rem; background-color:#28a745; cursor:grab;"><div class="card-body text-center py-2">Honda</div></div>
+        </div>
+
+        <h4>Plan de Spots</h4>
+        <div id="plan" class="row row-cols-2 row-cols-md-4 g-4"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-3 bg-light text-center"><div class="container"><small id="footerTime"></small> | <a href="#">Acerca de</a></div></footer>
+</div>
+
+<!-- Offcanvas Leyenda -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="legendCanvas"><div class="offcanvas-header"><h5 class="offcanvas-title">Leyenda de Marcas</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button></div><div class="offcanvas-body"><ul class="list-group"><li class="list-group-item bg-danger text-white">Toyota</li><li class="list-group-item bg-primary text-white">Ford</li><li class="list-group-item bg-dark text-white">BMW</li><li class="list-group-item bg-success text-white">Honda</li></ul></div></div>
+
+<!-- Modal Spot -->
+<div class="modal fade" id="spotModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="spotModalLabel">Detalles Spot</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="spotModalBody"></div></div></div></div>
+
+<!-- Toast container bottom-right -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(function() {
+          const colors = { Toyota:'#ff5733', Ford:'#007bff', BMW:'#343a40', Honda:'#28a745' };
+          const progressColors = { Toyota:'#ffc300', Ford:'#00d1ff', BMW:'#6c757d', Honda:'#20c997' };
+          const brands = Object.keys(colors);
+          let carCount = 5, inShop = 0, doneToday = 0, totalTime = 0;
+
+          function initLayout(){ brands.forEach(b=>{ for(let i=1;i<=4;i++){ $('#plan').append(`<div class="col"><div id="spot${b}${i}" class="card spot text-white position-relative text-center p-2" data-brand="${b}" style="background-color:${colors[b]}; cursor:pointer;">${b} ${i}</div></div>`); } }); }
+          initLayout(); updateMetrics(); updateFooter();
+
+          function createCar(){ const b=brands[Math.floor(Math.random()*brands.length)]; const id='car'+carCount; const html=`<div id="${id}" class="card car text-white position-relative" draggable="true" data-brand="${b}" data-time="${Date.now()}" style="width:8rem; background-color:${colors[b]}; cursor:grab;"><div class="card-body text-center py-2">${b} <span class="badge bg-light text-dark">${new Date().toLocaleTimeString()}</span></div></div>`; $('#cars').append(html); carCount++; updateMetrics(); showToast(`Nuevo ${b} ha llegado`, 'info'); }
+          setInterval(createCar,10000);
+
+          $('#filterBrand .dropdown-item').click(function(){ const f=$(this).data('brand'); $('.car').toggle(f==='all'||$(this).data('brand')===f); updateMetrics(); });
+
+          $(document).on('dragstart','.car',function(e){ const brand=$(this).data('brand'); e.originalEvent.dataTransfer.setData('text',e.target.id); $('.spot').each(function(){ $(this).toggleClass('border border-3 border-light',$(this).data('brand')===brand); }); });
+          $(document).on('dragend','.car',()=>$('.spot').removeClass('border border-3 border-light'));
+          $('.spot').on('dragover',e=>e.preventDefault());
+          $('.spot').on('drop',function(e){ e.preventDefault(); const $s=$(this); const id=e.originalEvent.dataTransfer.getData('text'); assignSpot($('#'+id),$s); });
+
+          $(document).on('click','.car',function(){ const $c=$(this); if(!$c.parent().is('#cars')) return; const b=$c.data('brand'); const $s=$('.spot').filter(function(){ return $(this).data('brand')===b && !$(this).children('.car').length; }).first(); if(!$s.length){ showToast(`No hay spots disponibles para ${b}`, 'error'); return; } assignSpot($c,$s); });
+
+          function assignSpot($c,$s){ $c.appendTo($s).addClass('mx-auto mt-2'); inShop++; updateMetrics(); showToast(`${$c.data('brand')} asignado a ${$s.text()}`, 'info'); const clr=progressColors[$c.data('brand')]; const $prog=$(`<div class="progress position-absolute top-0 start-0 w-100 h-100" style="opacity:0.4;"><div class="progress-bar" role="progressbar" style="width:0%; background-color:${clr};"></div></div>`); $s.append($prog); $prog.find('.progress-bar').animate({width:'100%'},17000,function(){ $prog.remove(); $c.remove(); inShop--; doneToday++; totalTime+=17; updateMetrics(); showToast(`${$s.text()} liberado`, 'success'); }); $('.spot').removeClass('border border-3 border-light'); }
+
+          $(document).on('click','.spot',function(){ $('#spotModalLabel').text($(this).text()); $('#spotModalBody').text('Marca: '+$(this).data('brand')); new bootstrap.Modal($('#spotModal')).show(); });
+
+          function updateMetrics(){ $('#metricWaiting').text($('#cars .car').length); $('#metricInShop').text(inShop); $('#metricDone').text(doneToday); $('#metricAvg').text(doneToday?Math.round(totalTime/doneToday):0); }
+          function updateFooter(){ $('#footerTime').text(new Date().toLocaleString()); }
+          setInterval(updateFooter,60000);
+
+          // Función para mostrar toasts Bootstrap stackeados
+          function showToast(message, type) {
+            const toastId = 'toast' + Date.now();
+            const $toast = $(
+              `<div id="${toastId}" class="toast align-items-center text-bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">` +
+                `<div class="d-flex">` +
+                  `<div class="toast-body">${message}</div>` +
+                  `<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>` +
+                `</div>` +
+              `</div>`
+            );
+            $('#toastContainer').append($toast);
+            const bsToast = new bootstrap.Toast($toast[0], { delay: 3000 });
+            bsToast.show();
+          }
+        });
+    </script>
+}

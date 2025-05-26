@@ -1,0 +1,50 @@
+﻿let Notyf = function () { "use strict"; var t, i = function () { return (i = Object.assign || function (t) { for (var i, e = 1, n = arguments.length; e < n; e++)for (var o in i = arguments[e]) Object.prototype.hasOwnProperty.call(i, o) && (t[o] = i[o]); return t }).apply(this, arguments) }, e = (n.prototype.on = function (t, i) { var e = this.listeners[t] || []; this.listeners[t] = e.concat([i]) }, n.prototype.triggerEvent = function (t, i) { var e = this; (this.listeners[t] || []).forEach(function (t) { return t({ target: e, event: i }) }) }, n); function n(t) { this.options = t, this.listeners = {} } (s = t = t || {})[s.Add = 0] = "Add", s[s.Remove = 1] = "Remove"; var o, s, a = (r.prototype.push = function (i) { this.notifications.push(i), this.updateFn(i, t.Add, this.notifications) }, r.prototype.splice = function (i, e) { return e = this.notifications.splice(i, e)[0], this.updateFn(e, t.Remove, this.notifications), e }, r.prototype.indexOf = function (t) { return this.notifications.indexOf(t) }, r.prototype.onUpdate = function (t) { this.updateFn = t }, r); function r() { this.notifications = [] } (s = o = o || {}).Dismiss = "dismiss"; var c = { types: [{ type: "success", className: "notyf__toast--success", backgroundColor: "#3dc763", icon: { className: "notyf__icon--success", tagName: "i" } }, { type: "error", className: "notyf__toast--error", backgroundColor: "#ed3d3d", icon: { className: "notyf__icon--error", tagName: "i" } },], duration: 2e3, ripple: !0, position: { x: "right", y: "bottom" }, dismissible: (s.Click = "click", !1) }, p = (l.prototype.on = function (t, e) { var n; this.events = i(i({}, this.events), ((n = {})[t] = e, n)) }, l.prototype.update = function (i, e) { e === t.Add ? this.addNotification(i) : e === t.Remove && this.removeNotification(i) }, l.prototype.removeNotification = function (t) { var i, e, n = this, t = this._popRenderedNotification(t); t && ((e = t.node).classList.add("notyf__toast--disappear"), e.addEventListener(this.animationEndEventName, i = function (t) { t.target === e && (e.removeEventListener(n.animationEndEventName, i), n.container.removeChild(e)) })) }, l.prototype.addNotification = function (t) { var i = this._renderNotification(t); this.notifications.push({ notification: t, node: i }), this._announce(t.options.message || "Notification") }, l.prototype._renderNotification = function (t) { var i = this._buildNotificationCard(t), e = t.options.className; return e && (t = i.classList).add.apply(t, e.split(" ")), this.container.appendChild(i), i }, l.prototype._popRenderedNotification = function (t) { for (var i = -1, e = 0; e < this.notifications.length && i < 0; e++)this.notifications[e].notification === t && (i = e); if (-1 !== i) return this.notifications.splice(i, 1)[0] }, l.prototype.getXPosition = function (t) { return (null === (t = null == t ? void 0 : t.position) || void 0 === t ? void 0 : t.x) || "right" }, l.prototype.getYPosition = function (t) { return (null === (t = null == t ? void 0 : t.position) || void 0 === t ? void 0 : t.y) || "bottom" }, l.prototype.adjustContainerAlignment = function (t) { var i = this.X_POSITION_FLEX_MAP[this.getXPosition(t)], e = this.Y_POSITION_FLEX_MAP[this.getYPosition(t)], t = this.container.style; t.setProperty("justify-content", e), t.setProperty("align-items", i) }, l.prototype._buildNotificationCard = function (t) { var i = this, e = t.options, n = e.icon; this.adjustContainerAlignment(e); var s = this._createHTMLElement({ tagName: "div", className: "notyf__toast" }), a = this._createHTMLElement({ tagName: "div", className: "notyf__ripple" }), r = this._createHTMLElement({ tagName: "div", className: "notyf__wrapper" }), c = this._createHTMLElement({ tagName: "div", className: "notyf__message" }); c.innerHTML = e.message || ""; var p, l, d, f, u = e.background || e.backgroundColor; return n && (p = this._createHTMLElement({ tagName: "div", className: "notyf__icon" }), ("string" == typeof n || n instanceof String) && (p.innerHTML = new String(n).valueOf()), "object" == typeof n && (l = n.tagName, d = n.className, f = n.text, n = void 0 === (n = n.color) ? u : n, f = this._createHTMLElement({ tagName: void 0 === l ? "i" : l, className: d, text: f }), n && (f.style.color = n), p.appendChild(f)), r.appendChild(p)), r.appendChild(c), s.appendChild(r), u && (e.ripple ? (a.style.background = u, s.appendChild(a)) : s.style.background = u), e.dismissible && (a = this._createHTMLElement({ tagName: "div", className: "notyf__dismiss" }), u = this._createHTMLElement({ tagName: "button", className: "notyf__dismiss-btn" }), a.appendChild(u), r.appendChild(a), s.classList.add("notyf__toast--dismissible"), u.addEventListener("click", function (e) { var n, s; null !== (s = (n = i.events)[o.Dismiss]) && void 0 !== s && s.call(n, { target: t, event: e }), e.stopPropagation() })), s.addEventListener("click", function (e) { var n, s; return null === (s = (n = i.events)[o.Click]) || void 0 === s ? void 0 : s.call(n, { target: t, event: e }) }), e = "top" === this.getYPosition(e) ? "upper" : "lower", s.classList.add("notyf__toast--" + e), s }, l.prototype._createHTMLElement = function (t) { var i = t.tagName, e = t.className, t = t.text, i = document.createElement(i); return e && (i.className = e), i.textContent = t || null, i }, l.prototype._createA11yContainer = function () { var t = this._createHTMLElement({ tagName: "div", className: "notyf-announcer" }); t.setAttribute("aria-atomic", "true"), t.setAttribute("aria-live", "polite"), t.style.border = "0", t.style.clip = "rect(0 0 0 0)", t.style.height = "1px", t.style.margin = "-1px", t.style.overflow = "hidden", t.style.padding = "0", t.style.position = "absolute", t.style.width = "1px", t.style.outline = "0", document.body.appendChild(t), this.a11yContainer = t }, l.prototype._announce = function (t) { var i = this; this.a11yContainer.textContent = "", setTimeout(function () { i.a11yContainer.textContent = t }, 100) }, l.prototype._getAnimationEndEventName = function () { var t, i = document.createElement("_fake"), e = { MozTransition: "animationend", OTransition: "oAnimationEnd", WebkitTransition: "webkitAnimationEnd", transition: "animationend" }; for (t in e) if (void 0 !== i.style[t]) return e[t]; return "animationend" }, l); function l() { this.notifications = [], this.events = {}, this.X_POSITION_FLEX_MAP = { left: "flex-start", center: "center", right: "flex-end" }, this.Y_POSITION_FLEX_MAP = { top: "flex-start", center: "center", bottom: "flex-end" }; var t = document.createDocumentFragment(), i = this._createHTMLElement({ tagName: "div", className: "notyf" }); t.appendChild(i), document.body.appendChild(t), this.container = i, this.animationEndEventName = this._getAnimationEndEventName(), this._createA11yContainer() } function d(t) { var e = this; this.dismiss = this._removeNotification, this.notifications = new a, this.view = new p; var n = this.registerTypes(t); this.options = i(i({}, c), t), this.options.types = n, this.notifications.onUpdate(function (t, i) { return e.view.update(t, i) }), this.view.on(o.Dismiss, function (t) { var i = t.target, t = t.event; e._removeNotification(i), i.triggerEvent(o.Dismiss, t) }), this.view.on(o.Click, function (t) { var i = t.target, t = t.event; return i.triggerEvent(o.Click, t) }) } return d.prototype.error = function (t) { return t = this.normalizeOptions("error", t), this.open(t) }, d.prototype.success = function (t) { return t = this.normalizeOptions("success", t), this.open(t) }, d.prototype.open = function (t) { var n = this.options.types.find(function (i) { return i.type === t.type }) || {}, n = i(i({}, n), t); return this.assignProps(["ripple", "position", "dismissible"], n), n = new e(n), this._pushNotification(n), n }, d.prototype.dismissAll = function () { for (; this.notifications.splice(0, 1);); }, d.prototype.assignProps = function (t, i) { var e = this; t.forEach(function (t) { i[t] = (null == i[t] ? e.options : i)[t] }) }, d.prototype._pushNotification = function (t) { var i = this; this.notifications.push(t); var e = (void 0 !== t.options.duration ? t : this).options.duration; e && setTimeout(function () { return i._removeNotification(t) }, e) }, d.prototype._removeNotification = function (t) { -1 !== (t = this.notifications.indexOf(t)) && this.notifications.splice(t, 1) }, d.prototype.normalizeOptions = function (t, e) { return t = { type: t }, "string" == typeof e ? t.message = e : "object" == typeof e && (t = i(i({}, t), e)), t }, d.prototype.registerTypes = function (t) { var e = (t && t.types || []).slice(); return c.types.map(function (t) { var n = -1; e.forEach(function (i, e) { i.type === t.type && (n = e) }); var o = -1 !== n ? e.splice(n, 1)[0] : {}; return i(i({}, t), o) }).concat(e) }, d }();
+
+// Configuración de Notyf
+const notyfOptions = {
+    duration: 3000,
+    ripple: true,
+    types: [
+        {
+            type: 'info',
+            background: '#3b82f6',
+            icon: {
+                className: 'material-icons',
+                tagName: 'i',
+                text: 'info'
+            }
+        },
+        {
+            type: 'warning',
+            background: '#f59e0b',
+            icon: {
+                className: 'material-icons',
+                tagName: 'i',
+                text: 'warning'
+            }
+        }
+    ]
+};
+// Inicialización de Notyf
+const toast = new Notyf(notyfOptions);
+
+// Funciones para mostrar notificaciones
+const mostrarToastExito = (mensaje) => {
+    toast.success(mensaje);
+};
+
+const mostrarToastError = (mensaje) => {
+    toast.error(mensaje);
+};
+
+const mostrarToastInformativo = (mensaje) => {
+    toast.open({
+        type: 'info',               // Se utiliza el tipo 'info'
+        message: mensaje,           // El mensaje de la notificación
+        icon: {                      // Icono específico para la notificación 'info'
+            className: 'material-icons',
+            tagName: 'i',
+            text: 'info'
+        }
+    });
+};
